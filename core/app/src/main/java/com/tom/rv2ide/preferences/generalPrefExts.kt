@@ -59,7 +59,7 @@ class InterfaceConfig(
   init {
     addPreference(UiMode())
     addPreference(ThemeSelector())
-    addPreference(Snowfall())
+    // addPreference(Snowfall())
     addPreference(LocaleSelector())
   }
 }

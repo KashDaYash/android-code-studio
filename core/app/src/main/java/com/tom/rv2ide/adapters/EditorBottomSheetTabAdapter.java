@@ -25,7 +25,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import com.tom.rv2ide.fragments.DiagnosticsListFragment;
 import com.tom.rv2ide.fragments.SearchResultFragment;
-import com.tom.rv2ide.fragments.TerminalFragment;
+import com.termux.app.TerminalFragment;
 import com.tom.rv2ide.fragments.output.AppLogFragment;
 import com.tom.rv2ide.fragments.output.BuildOutputFragment;
 import com.tom.rv2ide.fragments.output.IDELogFragment;

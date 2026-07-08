@@ -153,7 +153,7 @@
   <string name="view_diags">Diagnostics</string>
   <string name="title_installation_failed">Installation failed</string>
   <string name="msg_picked_isnt_dir">Picked file is not a directory!</string>
-  <string name="please_wait">Please wait for a moment…</string>
+  <string name="please_wait">Please wait for a moment …</string>
 
   <!-- Project Builder -->
   <string name="title_unsupported_device">Device Not Supported</string>
@@ -225,8 +225,6 @@
   <string name="idepref_kotlin_indexing_notif_summary">
       Display a notification banner when a Kotlin project is being indexed by the Kotlin Language Server.
   </string>
-
-  <string name="closing_project">Closing Project</string>
 
   <string name="include_test_str">Include android tests</string>
   <string name="use_cmake">Use CMake build system</string>

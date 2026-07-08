@@ -19,15 +19,16 @@
       android:background="@android:color/transparent"
       android:fitsSystemWindows="true">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/appToolBar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize">
-        
-        <include layout="@layout/toolbar_title_with_hat" />
-        
-    </com.google.android.material.appbar.MaterialToolbar>
-
+        <com.google.android.material.appbar.MaterialToolbar
+          android:id="@+id/appToolBar"
+          android:layout_width="match_parent"
+          android:layout_height="?attr/actionBarSize"
+          app:titleTextAppearance="@style/TextAppearance.AndroidIDE.TitleLarge.Bold"
+          app:subtitleTextAppearance="@style/TextAppearance.Material3.BodySmall"
+          app:title="@string/app_name"
+          app:subtitle="@string/subtitle_desc"
+          app:subtitleCentered="true"
+          app:titleCentered="true" />
     </com.google.android.material.appbar.AppBarLayout>
     <FrameLayout
       android:id="@+id/fragment_containers_parent"

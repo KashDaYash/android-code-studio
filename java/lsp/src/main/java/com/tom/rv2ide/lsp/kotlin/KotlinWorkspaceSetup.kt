@@ -119,7 +119,6 @@ class KotlinWorkspaceSetup(private val context: Context, private val workspace: 
     KslLogs.info("Cache status: {}", if (cacheValid) "VALID" else "INVALID/MISSING")
     KslLogs.info(indexCache.getCacheStats())
 
-    createKlsClasspathScript()
     processManager.startServer(classpathProvider)
 
     val initParams = createInitParams(workspaceRoot)
@@ -245,7 +244,7 @@ class KotlinWorkspaceSetup(private val context: Context, private val workspace: 
         classpathProvider.invalidateCache()
 
         // Recreate classpath script with new paths
-        createKlsClasspathScript()
+        // createKlsClasspathScript()
 
         // Clear index cache
         indexCache.clearCache()
@@ -542,79 +541,5 @@ class KotlinWorkspaceSetup(private val context: Context, private val workspace: 
 
     KslLogs.info("Full init params created with script support and formatting")
     return params
-  }
-
-  private fun findJavaPath(): String {
-    val candidates =
-        listOf(
-            "/data/data/com.tom.rv2ide/files/usr/bin/java",
-            "/data/data/com.tom.rv2ide/files/usr/opt/openjdk/bin/java",
-            System.getenv("JAVA_HOME")?.let { "$it/bin/java" },
-        )
-
-    val foundPath = candidates.filterNotNull().firstOrNull { path -> File(path).exists() }
-
-    if (foundPath != null) {
-      KslLogs.info("Found Java at: {}", foundPath)
-      return foundPath
-    }
-
-    KslLogs.warn("Java not found in standard locations, using default")
-    return "/data/data/com.tom.rv2ide/files/usr/bin/java"
-  }
-
-  private fun createKlsClasspathScript() {
-    try {
-      val classpathScript = File(Environment.SERVER_CONFIG_DIR, "classpath")
-
-      // Get the FULL classpath including all build directories
-      val androidClasspath = classpathProvider.getClasspath()
-      val androidSdkPath = classpathProvider.getAndroidSdkPath()
-
-      val javaPath = findJavaPath()
-      val javaHome =
-          File(javaPath).parentFile?.parentFile?.absolutePath
-              ?: "/data/data/com.tom.rv2ide/files/usr"
-
-      val javaBinPath = File(javaPath).parent ?: "/data/data/com.tom.rv2ide/files/usr/bin"
-
-      val scriptContent =
-          """#!/system/bin/sh
-# kls-classpath script for Kotlin Language Server
-# This script provides Android classpath and Java environment
-
-# Set Java home and path
-export JAVA_HOME="${javaHome}"
-export PATH="${javaBinPath}:${'$'}PATH"
-
-# Set Android SDK path
-export ANDROID_SDK_ROOT="${androidSdkPath}"
-export ANDROID_HOME="${androidSdkPath}"
-
-# Disable Gradle dependency resolution
-export KOTLIN_LSP_DISABLE_DEPENDENCY_RESOLUTION=true
-export KOTLIN_LSP_USE_PREDEFINED_CLASSPATH=true
-
-# Output the classpath (already includes everything from build dirs)
-echo "${androidClasspath}"
-"""
-              .trimIndent()
-
-      classpathScript.writeText(scriptContent)
-      classpathScript.setExecutable(true, false)
-
-      try {
-        Runtime.getRuntime().exec(arrayOf("chmod", "755", classpathScript.absolutePath)).waitFor()
-      } catch (e: Exception) {
-        KslLogs.debug("chmod command not available, relying on setExecutable")
-      }
-
-      KslLogs.info(
-          "Created kls-classpath script with {} entries",
-          classpathProvider.getClasspathList().size,
-      )
-    } catch (e: Exception) {
-      KslLogs.error("Failed to create kls-classpath script", e)
-    }
   }
 }

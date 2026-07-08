@@ -95,21 +95,9 @@ class KotlinServerProcessManager(context: Context) {
         }
     
     val klsCacheDir = "${Environment.HOME}/klsCacheDir"
-    
-    // Optimized command with performance tuning JVM flags
     val command =
         listOf(
             javaExec,
-            // Performance tuning flags
-            "-XX:+UseG1GC",
-            "-XX:+UseStringDeduplication",
-            "-XX:+OptimizeStringConcat",
-            "-XX:+TieredCompilation",
-            "-XX:TieredStopAtLevel=1", // Faster startup
-            "-Djava.awt.headless=true",
-            // Server properties
-            "-DkotlinLanguageServer.skipClasspathResolution=true",
-            "-DkotlinLanguageServer.predefinedClasspath=$androidClasspath",
             "-classpath",
             classpath,
             "org.javacs.kt.MainKt",

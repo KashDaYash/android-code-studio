@@ -51,7 +51,8 @@ dependencies {
     implementation(libs.common.markwon.extStrikethrough)
     implementation(libs.common.markwon.linkify)
     implementation(libs.common.markwon.recycler)
-
+    
+    implementation(projects.core.projects)
     implementation(projects.core.common)
     implementation(projects.core.resources)
     implementation(projects.termux.view)

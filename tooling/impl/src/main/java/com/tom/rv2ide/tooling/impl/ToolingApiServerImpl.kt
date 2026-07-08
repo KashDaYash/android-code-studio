@@ -237,9 +237,18 @@ internal class ToolingApiServerImpl(private val project: ProjectImpl) : ITooling
       props.setProperty("systemProp.sun.jnu.encoding", "UTF-8")
       props.setProperty("systemProp.user.language", "en")
       props.setProperty("systemProp.user.country", "US")
+      props.setProperty("org.gradle.daemon", "true")
+      props.setProperty("org.gradle.daemon.idletimeout", "10800000")  // 3 hours
+      props.setProperty("org.gradle.parallel", "true")
 
+      val memoryConfig = "-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+      val existingJvmArgs = props.getProperty(jvmArgsKey)?.trim().orEmpty()
+      if (!existingJvmArgs.contains("-Xmx")) {
+        props.setProperty(jvmArgsKey, memoryConfig)
+      }
+            
       propsFile.outputStream().use { out ->
-        props.store(out, "AndroidIDE: enforce UTF-8 & locale for Gradle daemon")
+        props.store(out, "AndroidCS: enforce UTF-8 & locale for Gradle daemon")
       }
     } catch (_: Throwable) {
       // best-effort; ignore

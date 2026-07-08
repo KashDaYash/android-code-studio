@@ -16,8 +16,8 @@ class ViewPagerAdapter(
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> ChatFragment(aiAgent)
-            1 -> AIHistoryFragment(aiAgent)
+            0 -> ChatFragment.newInstance(aiAgent)
+            1 -> AIHistoryFragment.newInstance(aiAgent)
             else -> throw IllegalArgumentException("Invalid position: $position")
         }
     }

@@ -58,7 +58,6 @@ class MainActivity : EdgeToEdgeIDEActivity() {
         override fun handleOnBackPressed() {
           viewModel.apply {
 
-            // Ignore back press if project creating is in progress
             if (creatingProject.value == true) {
               return@apply
             }
@@ -96,9 +95,6 @@ class MainActivity : EdgeToEdgeIDEActivity() {
       onBackPressedCallback.isEnabled = screen != SCREEN_MAIN
     }
 
-    // Data in a ViewModel is kept between activity rebuilds on
-    // configuration changes (i.e. screen rotation)
-    // * previous == -1 and current == -1 -> this is an initial instantiation of the activity
     if (viewModel.currentScreen.value == -1 && viewModel.previousScreen == -1) {
       viewModel.setScreen(SCREEN_MAIN)
     } else {
@@ -113,15 +109,12 @@ class MainActivity : EdgeToEdgeIDEActivity() {
   }
 
   override fun onApplySystemBarInsets(insets: Insets) {
-    binding.fragmentContainersParent.setPadding(insets.left, 0, insets.right, insets.bottom)
+    _binding?.fragmentContainersParent?.setPadding(insets.left, 0, insets.right, insets.bottom)
   }
 
   private fun onScreenChanged(screen: Int?) {
     val previous = viewModel.previousScreen
     if (previous != -1) {
-      // template list -> template details
-      // ------- OR -------
-      // template details -> template list
       val setAxisToX =
           (previous == SCREEN_TEMPLATE_LIST || previous == SCREEN_TEMPLATE_DETAILS) &&
               (screen == SCREEN_TEMPLATE_LIST || screen == SCREEN_TEMPLATE_DETAILS)
@@ -149,7 +142,7 @@ class MainActivity : EdgeToEdgeIDEActivity() {
         when (screen) {
           SCREEN_MAIN -> binding.main
           SCREEN_TEMPLATE_LIST ->
-              com.tom.rv2ide.templates.AtcInterface().create(this) // binding.templateList
+              com.tom.rv2ide.templates.AtcInterface().create(this)
           SCREEN_TEMPLATE_DETAILS -> binding.templateDetails
           else -> throw IllegalArgumentException("Invalid screen id: '$screen'")
         }

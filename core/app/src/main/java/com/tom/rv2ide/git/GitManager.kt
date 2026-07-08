@@ -440,11 +440,12 @@ class GitManager(private val projectPath: String) {
                 pushCommand?.setRefSpecs(org.eclipse.jgit.transport.RefSpec("refs/heads/$branchName:refs/heads/$branchName"))
             }
             
-            if (username != null && password != null) {
-                pushCommand?.setCredentialsProvider(
-                    org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(username, password)
+            pushCommand?.setCredentialsProvider(
+                org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(
+                    username ?: "", 
+                    password ?: ""
                 )
-            }
+            )
             
             val results = pushCommand?.call()
             val success = results?.all { result ->
@@ -470,11 +471,12 @@ class GitManager(private val projectPath: String) {
                 pullCommand?.setRemoteBranchName(branchName)
             }
             
-            if (username != null && password != null) {
-                pullCommand?.setCredentialsProvider(
-                    org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(username, password)
+            pullCommand?.setCredentialsProvider(
+                org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(
+                    username ?: "", 
+                    password ?: ""
                 )
-            }
+            )
             
             val result = pullCommand?.call()
             val success = result?.isSuccessful ?: false
@@ -491,11 +493,12 @@ class GitManager(private val projectPath: String) {
             val fetchCommand = git?.fetch()
             fetchCommand?.setRemote(remoteName)
             
-            if (username != null && password != null) {
-                fetchCommand?.setCredentialsProvider(
-                    org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(username, password)
+            fetchCommand?.setCredentialsProvider(
+                org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(
+                    username ?: "", 
+                    password ?: ""
                 )
-            }
+            )
             
             fetchCommand?.call()
             FetchResult(true, "Fetch successful")
@@ -511,11 +514,12 @@ class GitManager(private val projectPath: String) {
             cloneCommand.setURI(remoteUrl)
             cloneCommand.setDirectory(File(localPath))
             
-            if (username != null && password != null) {
-                cloneCommand.setCredentialsProvider(
-                    org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(username, password)
+            cloneCommand.setCredentialsProvider(
+                org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(
+                    username ?: "", 
+                    password ?: ""
                 )
-            }
+            )
             
             git = cloneCommand.call()
             repository = git?.repository

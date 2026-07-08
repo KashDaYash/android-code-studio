@@ -1,4 +1,0 @@
-io.github.mohammedbaqernull.logger.logwire.LogWireInitializer
-io.github.mohammedbaqernull.logger.logwire.R
-io.github.mohammedbaqernull.logger.logwire.R: R()
-io.github.mohammedbaqernull.logger.logwire.LogWireInitializer: LogWireInitializer()

@@ -33,6 +33,10 @@ import java.io.File
 import kotlinx.coroutines.delay
 import com.tom.rv2ide.artificial.dialogs.ProviderSwitchDialog
 
+/**
+ * @author Mohammed-baqer-null @ https://github.com/Mohammed-baqer-null
+ */
+
 class AIAgentManager(private val context: Context) {
 
     private val snippetParser = SnippetParser()

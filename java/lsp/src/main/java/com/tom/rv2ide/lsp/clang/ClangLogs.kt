@@ -14,18 +14,15 @@
  *  You should have received a copy of the GNU General Public License
  *   along with AndroidCodeStudio.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.tom.rv2ide.lsp.kotlin
+package com.tom.rv2ide.lsp.clang
 
-/**
- * Centralized LSP logging control Set ENABLE_LSP_LOGS to false to disable all LSP debug logs
- * * @author Mohammed-baqer-null @ https://github.com/Mohammed-baqer-null
- */
 import org.slf4j.LoggerFactory
 
-object KslLogs {
-  private const val ENABLE_LSP_LOGS = true // Set to true for debug builds
+/** @author Mohammed-baqer-null @ https://github.com/Mohammed-baqer-null */
+object ClangLogs {
+  private const val ENABLE_LSP_LOGS = false
 
-  private val log = LoggerFactory.getLogger(KslLogs::class.java)
+  private val log = LoggerFactory.getLogger(ClangLogs::class.java)
 
   fun error(message: String) {
     if (ENABLE_LSP_LOGS) log.error(message)
@@ -55,7 +52,6 @@ object KslLogs {
     if (ENABLE_LSP_LOGS) log.trace(message)
   }
 
-  // Simple formatted message methods that handle null values
   fun error(format: String, vararg args: Any?) {
     if (ENABLE_LSP_LOGS) {
       val safeArgs = args.map { it ?: "null" }.toTypedArray()
