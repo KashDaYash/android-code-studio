@@ -32,7 +32,8 @@ dependencies {
   kapt(libs.google.auto.service)
   implementation(libs.google.auto.service.annotations)
 
-  api(libs.composite.jaxp)
+  // api(libs.composite.jaxp)
+  api(files(rootProject.file("composite-builds/build-deps/libs/jaxp.jar")))
 
   api(projects.core.common)
   api(projects.core.indexingApi)

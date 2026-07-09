@@ -35,8 +35,10 @@ dependencies {
     api(projects.xml.resourcesApi)
 
     implementation(libs.common.kotlin)
-    implementation(libs.composite.jdt)
-    implementation(libs.composite.jaxp)
+    implementation(files(rootProject.file("composite-builds/build-deps/libs/jdt.jar")))
+    // implementation(libs.composite.jdt)
+    implementation(files(rootProject.file("composite-builds/build-deps/libs/jaxp.jar")))
+    // implementation(libs.composite.jaxp)
     implementation(libs.google.auto.service.annotations)
 
     implementation(projects.core.common)

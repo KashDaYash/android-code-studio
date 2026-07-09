@@ -50,16 +50,8 @@ dependencyResolutionManagement {
 
 include(
   ":appintro",
-  ":fuzzysearch",
   ":google-java-format",
   ":javac",
-  ":javapoet",
-  ":jaxp",
-  ":java-compiler",
-  ":jdk-compiler",
-  ":jdk-jdeps",
-  ":jdt",
-  ":layoutlib-api",
   ":logback-core",
 )
 

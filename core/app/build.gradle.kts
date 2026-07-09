@@ -256,7 +256,8 @@ dependencies {
   // Dependencies in composite build
   implementation(libs.composite.appintro)
   implementation(libs.composite.desugaringCore)
-  implementation(libs.composite.javapoet)
+  // implementation(libs.composite.javapoet)
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/javapoet.jar")))
 
   // Local projects here
   implementation(projects.core.projectdata)

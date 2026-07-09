@@ -35,17 +35,9 @@ dependencyResolutionManagement {
   val dependencySubstitutions = mapOf(
     "build-deps" to arrayOf(
       "appintro",
-      "fuzzysearch",
+      "logback-core",
       "google-java-format",
-      "java-compiler",
-      "javac",
-      "javapoet",
-      "jaxp",
-      "jdk-compiler",
-      "jdk-jdeps",
-      "jdt",
-      "layoutlib-api",
-      "logback-core"
+      "javac"
     ),
 
     "build-deps-common" to arrayOf(

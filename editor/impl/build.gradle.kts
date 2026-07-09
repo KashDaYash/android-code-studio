@@ -61,7 +61,8 @@ dependencies {
     implementation(libs.androidx.tracing.ktx)
 
     implementation(libs.common.utilcode)
-    implementation(libs.composite.jdt)
+    // implementation(libs.composite.jdt)
+    implementation(files(rootProject.file("composite-builds/build-deps/libs/jdt.jar")))
     
     implementation(libs.google.material)
 

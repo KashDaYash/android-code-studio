@@ -72,10 +72,14 @@ dependencies {
   implementation(projects.java.javacServices)
 
   implementation(libs.composite.javac)
-  implementation(libs.composite.javapoet)
-  implementation(libs.composite.jaxp)
-  implementation(libs.composite.jdkJdeps)
-  implementation(libs.composite.jdt)
+  // implementation(libs.composite.javapoet)
+  // implementation(libs.composite.jaxp)
+  // implementation(libs.composite.jdkJdeps)
+  // implementation(libs.composite.jdt)
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/jdt.jar")))
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/jdk-jdeps.jar")))
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/jaxp.jar")))
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/javapoet.jar")))
   implementation(libs.composite.googleJavaFormat)
 
   implementation(libs.androidx.core.ktx)

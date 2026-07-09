@@ -30,8 +30,10 @@ android {
 }
 
 dependencies {
-  api(libs.composite.javapoet)
-
+  // api(libs.composite.javapoet)
+  api(files(rootProject.file("composite-builds/build-deps/libs/java-compiler.jar")))
+  api(files(rootProject.file("composite-builds/build-deps/libs/javapoet.jar")))
+  
   api(projects.core.common)
   api(projects.core.resources)
   api(projects.logging.logger)

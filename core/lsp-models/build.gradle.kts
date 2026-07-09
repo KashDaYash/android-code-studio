@@ -30,7 +30,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.composite.fuzzysearch)
+    // implementation(libs.composite.fuzzysearch)
+    implementation(files(rootProject.file("composite-builds/build-deps/libs/fuzzysearch.jar")))
 
     implementation(projects.core.common)
 

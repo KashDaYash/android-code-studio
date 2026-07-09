@@ -37,7 +37,8 @@ android {
 dependencies {
     implementation(libs.common.kotlin)
     implementation(libs.androidx.collection)
-    implementation(libs.composite.jaxp)
+    implementation(files(rootProject.file("composite-builds/build-deps/libs/jaxp.jar")))
+    // implementation(libs.composite.jaxp)
 
     implementation(projects.logging.logger)
     implementation(projects.utilities.shared)
@@ -47,6 +48,6 @@ dependencies {
     api(libs.aapt2.annotations)
     api(libs.aapt2.common)
     api(libs.google.protobuf)
-    api(libs.composite.layoutlibApi)
+    api(files(rootProject.file("composite-builds/build-deps/libs/layoutlib-api.jar")))
     
 }
