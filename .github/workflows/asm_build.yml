@@ -79,7 +79,7 @@ jobs:
         run: |
           echo "signing.storeFile=signing/signing-key.jks" >> local.properties
           echo "signing.storePassword=${{ secrets.SIGNING_STORE_PASSWORD }}" >> local.properties
-          echo "signing.keyAlias=AndroidCS" >> local.properties
+          echo "signing.keyAlias=androidcs" >> local.properties
           echo "signing.keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}" >> local.properties
 
       - name: Assemble APK
