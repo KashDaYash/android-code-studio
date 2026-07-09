@@ -83,7 +83,7 @@ android {
           
           storeFile = keyStoreFile
           storePassword = signing_storePassword
-          keyAlias = "AndroidCS"
+          keyAlias = "androidcs"
           keyPassword = signing_keyPassword
       }
   }
