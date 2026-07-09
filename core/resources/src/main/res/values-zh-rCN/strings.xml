@@ -33,14 +33,14 @@
 
   <!-- Progress and status messages -->
   <string name="updater_preparing_download">正在准备下载…</string>
-  <string name="updater_progress_format">%d MB / %d MB</string>
+  <string name="updater_progress_format" formatted="false">%d MB / %d MB</string>
   <string name="updater_enable_install_permission">请启用“安装未知应用程序”并重试</string>
 
   <!-- Log messages -->
   <string name="updater_http_error">HTTP 错误：%s</string>
   <string name="updater_fetch_error">获取更新信息时出错</string>
   <string name="updater_parse_error">解析更新信息时出错</string>
-  <string name="updater_version_check_log">当前版本：%d，可用版本：%d，架构：%s</string>
+  <string name="updater_version_check_log" formatted="false">当前版本：%d，可用版本：%d，架构：%s</string>
   <string name="updater_no_compatible_variant">找不到架构的兼容变体：%s</string>
   <string name="updater_package_not_found">找不到包</string>
   <string name="updater_supported_abis">支持的 ABI：%s</string>
@@ -537,7 +537,7 @@
   <string name="lsp_server_uninstall_success">%s 服务器已成功卸载！</string>
   <string name="lsp_server_uninstall_failed">无法卸载 %s 服务器</string>
   <string name="lsp_server_not_found">找不到 %s 服务器目录</string>
-  <string name="lsp_server_uninstall_error">无法卸载 %s:\n%s</string>
+  <string name="lsp_server_uninstall_error" formatted="false">无法卸载 %s:\n%s</string>
 
   <!-- LSP Server Download -->
   <string name="lsp_server_preparing_download">正在准备下载…</string>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.github.mohammedbaqernull.logger.logwire" >
+
+    <uses-sdk android:minSdkVersion="21" />
+
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <queries>
+        <package android:name="io.github.mohammedbaqernull.logger" />
+    </queries>
+
+    <application>
+        <provider
+            android:name="io.github.mohammedbaqernull.logger.logwire.LogWireInitializer"
+            android:authorities="dollar_openBracket_applicationId_closeBracket.logwire.initializer"
+            android:exported="true" />
+    </application>
+
+</manifest>

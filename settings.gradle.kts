@@ -78,7 +78,7 @@ dependencyResolutionManagement {
 
 gradle.rootProject {
     val appMainVersion = System.getenv("MAIN_VERSION") ?: "1.0.0"
-    val revision = "r${System.getenv("REVISION_NUM") ?: "03"}"
+    val revision = "r${System.getenv("REVISION_NUM") ?: "04"}"
     val baseVersion = "$appMainVersion+gh.$revision"
     println("Android code studio version: $baseVersion")
     project.setProperty("version", baseVersion)

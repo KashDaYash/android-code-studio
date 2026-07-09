@@ -1,0 +1,1 @@
+io.github.mohammedbaqernull.logger.logwire

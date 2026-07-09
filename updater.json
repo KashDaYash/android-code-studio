@@ -1,16 +1,16 @@
 {
-  "baseVersionCode": 1024,
-  "baseVersionName": "1.0.0+gh.r3",
+  "baseVersionCode": 1025,
+  "baseVersionName": "1.0.0+gh.r4",
   "baseUrl": "https://github.com/Mohammed-Baqer-null/AndroidIDE-Rv2/releases/download/v{versionName}",
   "variants": {
     "armeabi-v7a": {
-      "versionCode": 1024,
-      "versionName": "1.0.0+gh.r3",
+      "versionCode": 1025,
+      "versionName": "1.0.0+gh.r4",
       "apkUrl": "{baseUrl}/android-code-studio-armeabi-v7a-{versionName}.apk"
     },
     "arm64-v8a": {
-      "versionCode": 1024,
-      "versionName": "1.0.0+gh.r3", 
+      "versionCode": 1025,
+      "versionName": "1.0.0+gh.r4", 
       "apkUrl": "{baseUrl}/android-code-studio-aarch64-{versionName}.apk"
     }
   },

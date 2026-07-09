@@ -1,0 +1,33 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="io.github.mohammedbaqernull.logger.logwire" >
+4
+5    <uses-sdk android:minSdkVersion="21" />
+6
+7    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
+7-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:4:3-73
+7-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:4:20-70
+8    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+8-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:5:3-75
+8-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:5:20-72
+9
+10    <queries>
+10-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:7:3-9:13
+11        <package android:name="io.github.mohammedbaqernull.logger" />
+11-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:8:5-66
+11-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:8:14-63
+12    </queries>
+13
+14    <application>
+14-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:11:3-16:17
+15        <provider
+15-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:12:5-15:33
+16            android:name="io.github.mohammedbaqernull.logger.logwire.LogWireInitializer"
+16-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:13:7-41
+17            android:authorities="${applicationId}.logwire.initializer"
+17-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:14:7-65
+18            android:exported="true" />
+18-->/data/data/com.termux/files/home/MinAndroidProjects/TomAndroidIDE/external/logwire/src/main/AndroidManifest.xml:15:7-30
+19    </application>
+20
+21</manifest>
