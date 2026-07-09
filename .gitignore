@@ -109,3 +109,4 @@ build.log
 .androidide
 
 external/logwire/build
+external/atc/build
