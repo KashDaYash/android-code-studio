@@ -107,3 +107,5 @@ scripts/
 # local.properties
 build.log
 .androidide
+
+external/logwire/build
