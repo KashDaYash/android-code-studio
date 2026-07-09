@@ -78,20 +78,9 @@ jobs:
       - name: Create local.properties
         run: |
           echo "signing.storeFile=signing/signing-key.jks" >> local.properties
-          echo "signing.storePassword=123456" >> local.properties  
+          echo "signing.storePassword=${{ secrets.SIGNING_STORE_PASSWORD }}" >> local.properties
           echo "signing.keyAlias=android-ide" >> local.properties
-          echo "signing.keyPassword=123456" >> local.properties
-
-      - name: Debug signing setup
-        run: |
-          echo "=== Repository structure ==="
-          find . -name "*.jks" -o -name "local.properties" | head -10
-          echo ""
-          echo "=== local.properties content ==="
-          cat local.properties || echo "local.properties not found"
-          echo ""
-          echo "=== SigningDirectory ==="
-          ls -la core/app/signing/ || echo "core/app/signing directory not found"
+          echo "signing.keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}" >> local.properties
 
       - name: Assemble APK
         run: ./gradlew assemble${{ env.BUILD_TYPE }}
