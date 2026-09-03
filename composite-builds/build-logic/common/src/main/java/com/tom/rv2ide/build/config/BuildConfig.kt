@@ -24,9 +24,9 @@ import org.gradle.api.JavaVersion
  */
 object BuildConfig {
 
-  /** AndroidIDE's package name. */
-  // const val packageName = "com.tom.rv2ide"
-  const val packageName = "com.tom.rv2ide"
+  /** Application ID — unique so this fork can install alongside upstream ACS. */
+  // Upstream uses: "com.tom.rv2ide"
+  const val packageName = "com.tom.rv2ide.kash"
 
   /** The compile SDK version. */
   const val compileSdk = 34
