@@ -9,9 +9,9 @@
 
 <p align="left">
 <!-- Latest release -->
-<img src="https://img.shields.io/github/v/release/AndroidCSOfficial/android-code-studio?include_prereleases&amp;label=latest%20release" alt="Latest release">
+<img src="https://img.shields.io/github/v/release/KashDaYash/android-code-studio?include_prereleases&label=latest%20release" alt="Latest release">
 <!-- Build and test -->
-<!-- <img src="https://github.com/Mohammed-baqer-null/android-code-studio/actions/workflows/asm_build.yml/badge.svg" alt="Builds and tests"> -->
+<!-- <img src="https://github.com/KashDaYash/android-code-studio/actions/workflows/asm_build.yml/badge.svg" alt="Builds and tests"> -->
 <!-- Crowdin -->
 <a href="https://crowdin.com/project/androidide"><img src="https://badges.crowdin.net/androidide/localized.svg" alt="Crowdin"></a>
 <!-- License -->
@@ -19,10 +19,10 @@
 
 
 <p align="left">
-  <a href="https://github.com/Mohammed-baqer-null/android-code-studio/issues/new?labels=bug&template=BUG.yml&title=%5BBug%5D%3A+">
+  <a href="https://github.com/KashDaYash/android-code-studio/issues/new?labels=bug&template=BUG.yml&title=%5BBug%5D%3A+">
     <img src="https://img.shields.io/badge/Report%20Bug-red?style=for-the-badge&logo=github" alt="Report a bug">
   </a>
-  <a href="https://github.com/Mohammed-baqer-null/android-code-studio/issues/new?labels=feature&template=FEATURE.yml&title=%5BFeature%5D%3A+">
+  <a href="https://github.com/KashDaYash/android-code-studio/issues/new?labels=feature&template=FEATURE.yml&title=%5BFeature%5D%3A+">
     <img src="https://img.shields.io/badge/Request%20Feature-brightgreen?style=for-the-badge&logo=github" alt="Request a feature">
   </a>
   <a href="https://t.me/rv2ide">
@@ -64,10 +64,10 @@
 
 [<img src="https://github.com/Kunzisoft/Github-badge/raw/main/get-it-on-github.svg"
     alt="Get it on F-Droid"
-    height="80">](https://github.com/Mohammed-baqer-null/android-code-studio/releases)
+    height="80">](https://github.com/KashDaYash/android-code-studio/releases)
 
 > _Please install Android Code Studio from trusted sources only i.e._
-> - [_GitHub Releases_](https://github.com/Mohammed-baqer-null/android-code-studio/releases)
+> - [_GitHub Releases_](https://github.com/KashDaYash/android-code-studio/releases)
 
 - Download the Android Code Studio APK from the mentioned trusted sources.
 - Follow the
