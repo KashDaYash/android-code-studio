@@ -76,7 +76,17 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Assemble APK
-        run: ./gradlew assemble${{ env.BUILD_TYPE }} -x signApk
+        run: ./gradlew assemble${{ env.BUILD_TYPE }} -x signApk --info 2>&1 | tee build.log
+        continue-on-error: true
+      
+      - name: Display Build Errors
+        if: always()
+        run: |
+          echo "=== Build Log ==="
+          tail -n 300 build.log
+          echo ""
+          echo "=== Errors Found ==="
+          grep -iE "error|failed|exception" build.log | tail -50
 
       - name: List APK files
         run: ls -la core/app/build/outputs/apk/${{ env.BUILD_TYPE_LOWER }}/ || echo "Directory not found"
