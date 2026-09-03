@@ -39,6 +39,7 @@ import com.tom.rv2ide.preferences.internal.EditorPreferences
 import com.tom.rv2ide.syntax.colorschemes.SchemeAndroidIDE
 import com.tom.rv2ide.tasks.cancelIfActive
 import com.tom.rv2ide.tasks.runOnUiThread
+import com.tom.rv2ide.utils.LargeFileGuard
 import com.tom.rv2ide.utils.customOrJBMono
 import com.tom.rv2ide.artificial.completion.SuggestionView
 import io.github.rosemoe.sora.text.Content
@@ -90,6 +91,9 @@ class CodeEditorView(context: Context, file: File, selection: Range) :
     get() = _suggestionView
 
   private var analysisJob: Job? = null
+
+  /** Whether this editor is in memory-safe mode (large file). */
+  private val safeMode: Boolean = LargeFileGuard.shouldUseSafeMode(file)
 
   /** Get the file of this editor. */
   val file: File?
@@ -167,6 +171,9 @@ class CodeEditorView(context: Context, file: File, selection: Range) :
     binding.editor.subscribeEvent(io.github.rosemoe.sora.event.ContentChangeEvent::class.java) {
         event: io.github.rosemoe.sora.event.ContentChangeEvent,
         _: Any? ->
+      if (safeMode) {
+        return@subscribeEvent
+      }
       val editorFile = binding.editor.file
       if (editorFile != null && (editorFile.extension == "kt")) {
         startDiagnosticAnalysis(editorFile)
@@ -251,6 +258,10 @@ class CodeEditorView(context: Context, file: File, selection: Range) :
   }
 
   private fun startDiagnosticAnalysis(file: File) {
+    if (safeMode || LargeFileGuard.shouldUseSafeMode(file)) {
+      return
+    }
+
     analysisJob?.cancel()
 
     analysisJob =
@@ -359,14 +370,33 @@ class CodeEditorView(context: Context, file: File, selection: Range) :
   }
 
   private fun postRead(file: File) {
+    binding.editor.file = file
+
+    if (safeMode || LargeFileGuard.shouldUseSafeMode(file)) {
+      // Safe mode: skip LSP, diagnostics, and heavy language tooling to reduce OOM risk.
+      // Basic TreeSitter highlighting may still run via setupLanguage for readability.
+      log.info(
+          "Opening {} in safe mode ({}). LSP/diagnostics disabled.",
+          file.name,
+          LargeFileGuard.formatSize(file),
+      )
+      try {
+        binding.editor.setupLanguage(file)
+      } catch (e: Exception) {
+        log.warn("setupLanguage failed in safe mode for {}", file.name, e)
+      }
+      binding.editor.setLanguageServer(null)
+      (context as? BaseEditorActivity?)?.refreshSymbolInput()
+      (context as? Activity?)?.invalidateOptionsMenu()
+      return
+    }
+
     binding.editor.setupLanguage(file)
     binding.editor.setLanguageServer(createLanguageServer(file))
 
     if (IDELanguageClientImpl.isInitialized()) {
       binding.editor.setLanguageClient(IDELanguageClientImpl.getInstance())
     }
-
-    binding.editor.file = file
 
     if (file.extension == "kt") {
       binding.editor.initDiagnosticHandling()
