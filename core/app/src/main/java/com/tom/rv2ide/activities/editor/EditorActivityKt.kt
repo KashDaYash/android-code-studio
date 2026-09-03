@@ -19,5 +19,3 @@ package com.tom.rv2ide.activities.editor
 
 /** @author Akash Yadav */
 class EditorActivityKt : EditorHandlerActivity()
-
-// TODO: Should we adjust to the display cutout insets?
