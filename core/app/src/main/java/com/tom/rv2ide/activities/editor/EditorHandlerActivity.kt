@@ -56,7 +56,9 @@ import com.tom.rv2ide.tasks.executeAsync
 import com.tom.rv2ide.ui.CodeEditorView
 import com.tom.rv2ide.utils.DialogUtils.newYesNoDialog
 import com.tom.rv2ide.utils.IntentUtils.openImage
+import com.tom.rv2ide.utils.LargeFileGuard
 import com.tom.rv2ide.utils.UniqueNameBuilder
+import com.tom.rv2ide.utils.flashError
 import com.tom.rv2ide.utils.flashSuccess
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -194,8 +196,17 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
 
   private fun onReadOpenedFilesCache(cache: OpenedFilesCache?) {
     cache ?: return
-    cache.allFiles.forEach { file -> openFile(File(file.filePath), file.selection) }
-    openFile(File(cache.selectedFile))
+    // Restore without warning dialogs; still skip hard-blocked files
+    cache.allFiles.forEach { file ->
+      val f = File(file.filePath)
+      if (!LargeFileGuard.isBlocked(f)) {
+        openFileInternal(f, file.selection)
+      }
+    }
+    val selected = File(cache.selectedFile)
+    if (!LargeFileGuard.isBlocked(selected)) {
+      openFileInternal(selected, null)
+    }
   }
 
   override fun onPrepareOptionsMenu(menu: Menu): Boolean {
@@ -300,9 +311,76 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
       return null
     }
 
-    val index = openFileAndGetIndex(file, range)
+    val openedIndex = findIndexOfEditorByFile(file)
+    if (openedIndex != -1) {
+      return selectOpenedFile(openedIndex)
+    }
+
+    if (!file.exists()) {
+      return null
+    }
+
+    if (LargeFileGuard.isBlocked(file)) {
+      flashError(
+          "Cannot open \"${file.name}\" (${LargeFileGuard.formatSize(file)}). " +
+              "Files larger than 10 MB are blocked to prevent crashes."
+      )
+      log.warn("Blocked opening oversized file: {} ({})", file, LargeFileGuard.sizeOf(file))
+      return null
+    }
+
+    if (LargeFileGuard.needsWarning(file)) {
+      newYesNoDialog(
+              context = this,
+              title = "Large file",
+              message =
+                  "\"${file.name}\" is ${LargeFileGuard.formatSize(file)}. " +
+                      "Opening it may cause lag or out-of-memory issues. " +
+                      "Syntax highlighting and language tools will run in safe mode. Open anyway?",
+              positiveClickListener = { dialog, _ ->
+                dialog.dismiss()
+                openFileInternal(file, range)
+              },
+          ) { dialog, _ ->
+            dialog.dismiss()
+          }
+          .show()
+      return null
+    }
+
+    return openFileInternal(file, range)
+  }
+
+  private fun selectOpenedFile(index: Int): CodeEditorView? {
     val tab = content.tabs.getTabAt(index)
     if (tab != null && index >= 0 && !tab.isSelected) {
+      tab.select()
+    }
+    editorViewModel.startDrawerOpened = false
+    editorViewModel.displayedFileIndex = index
+    return try {
+      getEditorAtIndex(index)
+    } catch (th: Throwable) {
+      log.error("Unable to get editor at opened file index {}", index, th)
+      null
+    }
+  }
+
+  /** Opens a file without the large-file warning dialog (used after confirm / cache restore). */
+  private fun openFileInternal(file: File, selection: Range?): CodeEditorView? {
+    val range = selection ?: Range.NONE
+    if (ImageUtils.isImage(file)) {
+      openImage(this, file)
+      return null
+    }
+
+    val index = openFileAndGetIndex(file, range)
+    if (index < 0) {
+      return null
+    }
+
+    val tab = content.tabs.getTabAt(index)
+    if (tab != null && !tab.isSelected) {
       tab.select()
     }
 
@@ -318,33 +396,38 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
   }
 
   override fun openFileAndGetIndex(file: File, selection: Range?): Int {
-      val openedFileIndex = findIndexOfEditorByFile(file)
-      if (openedFileIndex != -1) {
-          return openedFileIndex
-      }
-  
-      if (!file.exists()) {
-          return -1
-      }
-  
-      val position = editorViewModel.getOpenedFileCount()
-  
-      log.info("Opening file at index {} file:{}", position, file)
-  
-      val editor = CodeEditorView(this, file, selection!!)
-      editor.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-  
-      content.editorContainer.addView(editor)
-      content.tabs.addTab(content.tabs.newTab())
-  
-      editorViewModel.addFile(file)
-      editorViewModel.setCurrentFile(position, file)
-  
-      updateTabs()
-  
-      onFileLoaded(editor, file)
-  
-      return position
+    val openedFileIndex = findIndexOfEditorByFile(file)
+    if (openedFileIndex != -1) {
+      return openedFileIndex
+    }
+
+    if (!file.exists()) {
+      return -1
+    }
+
+    if (LargeFileGuard.isBlocked(file)) {
+      log.warn("openFileAndGetIndex blocked oversized file: {}", file)
+      return -1
+    }
+
+    val position = editorViewModel.getOpenedFileCount()
+
+    log.info("Opening file at index {} file:{}", position, file)
+
+    val editor = CodeEditorView(this, file, selection ?: Range.NONE)
+    editor.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+
+    content.editorContainer.addView(editor)
+    content.tabs.addTab(content.tabs.newTab())
+
+    editorViewModel.addFile(file)
+    editorViewModel.setCurrentFile(position, file)
+
+    updateTabs()
+
+    onFileLoaded(editor, file)
+
+    return position
   }
 
   override fun getEditorForFile(file: File): CodeEditorView? {
