@@ -96,11 +96,14 @@ class IDEApplication : TermuxApplication() {
 
     SilentInstaller.init(this)
     // Load native libraries after base context is attached
-    TreeSitter.loadLibrary()
     if (!VMUtils.isJvm()) {
-      try {} catch (e: Throwable) {
+      try {
+        TreeSitter.loadLibrary()
+      } catch (e: Throwable) {
         log.error("Failed to load TreeSitter library", e)
       }
+    } else {
+      TreeSitter.loadLibrary()
     }
   }
 
