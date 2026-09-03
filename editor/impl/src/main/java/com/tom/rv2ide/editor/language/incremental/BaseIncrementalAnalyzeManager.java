@@ -296,12 +296,12 @@ public abstract class BaseIncrementalAnalyzeManager extends
 
     // highlight special line comments
     var commentText = token.getText();
-    if (commentText.length() > 2) {
-      commentText = commentText.substring(2);
-      commentText = commentText.trim();
-      if ("todo".equalsIgnoreCase(commentText.substring(0, 4))) {
+    if (commentText != null && commentText.length() > 2) {
+      commentText = commentText.substring(2).trim();
+      // Guard against short comments to avoid StringIndexOutOfBoundsException
+      if (commentText.length() >= 4 && "todo".equalsIgnoreCase(commentText.substring(0, 4))) {
         commentType = TODO_COMMENT;
-      } else if ("fixme".equalsIgnoreCase(commentText.substring(0, 5))) {
+      } else if (commentText.length() >= 5 && "fixme".equalsIgnoreCase(commentText.substring(0, 5))) {
         commentType = FIXME_COMMENT;
       }
     }
