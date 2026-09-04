@@ -60,11 +60,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Ensure output directories exist
-        run: |
-          # create expected output directory and other needed dirs
-          mkdir -p core/app/build/outputs/apk/${{ env.BUILD_TYPE_LOWER }}
-          mkdir -p core/app/build/intermediates || true
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Change Gradle wrapper permissions
         run: chmod +x ./gradlew
@@ -75,46 +72,49 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-v2-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-v3-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
       - name: Assemble APK
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          echo "Running: ./gradlew assemble${{ env.BUILD_TYPE }} -x signApk --info"
-          ./gradlew assemble${{ env.BUILD_TYPE }} -x signApk --info 2>&1 | tee build.log
+          set -o pipefail
+          echo "Running: ./gradlew assemble${BUILD_TYPE}"
+          # Do NOT use -x signApk — that task does not exist and aborts the whole build.
+          ./gradlew "assemble${BUILD_TYPE}" --stacktrace 2>&1 | tee build.log
 
       - name: Display Build Errors (tail)
         if: always()
         run: |
-          echo "=== Last 300 lines of build.log ==="
-          tail -n 300 build.log || echo "build.log not found"
+          echo "=== Last 200 lines of build.log ==="
+          tail -n 200 build.log || echo "build.log not found"
           echo ""
-          echo "=== Errors Found in build.log ==="
-          grep -iE "error|failed|exception" build.log | tail -50 || echo "No error keywords found"
+          echo "=== Error keywords ==="
+          grep -iE "error|failed|exception|FAILURE" build.log | tail -40 || echo "No error keywords found"
 
-      - name: Find APKs and show details
+      - name: Find APKs
         if: always()
+        id: find_apks
         run: |
-          echo "BUILD_TYPE_LOWER=${{ env.BUILD_TYPE_LOWER }}"
-          echo "Listing core/app/build/outputs/apk tree (maxdepth 5):"
-          if [ -d core/app/build/outputs/apk ]; then
-            find core/app/build/outputs/apk -maxdepth 5 -type f -name "*.apk" -ls || echo "No APK files found under outputs/apk"
-          else
-            echo "Directory core/app/build/outputs/apk not found"
+          echo "Listing APK tree:"
+          find core/app/build/outputs -type f -name "*.apk" -ls 2>/dev/null || true
+          APK_COUNT=$(find core/app/build/outputs -type f -name "*.apk" 2>/dev/null | wc -l | tr -d ' ')
+          echo "APK_COUNT=$APK_COUNT"
+          echo "apk_count=$APK_COUNT" >> $GITHUB_OUTPUT
+          if [ "$APK_COUNT" = "0" ]; then
+            echo "::error::No APK files were produced. Build did not package the app."
+            exit 1
           fi
 
-      - name: List APK files (legacy check)
-        run: ls -la core/app/build/outputs/apk/${{ env.BUILD_TYPE_LOWER }}/ || echo "Directory not found"
-
-      - name: Upload all APKs
-        if: always()
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: apks-${{ env.BUILD_TYPE_LOWER }}
-          path: |
-            core/app/build/outputs/apk/**/*.apk
-            core/app/build/outputs/apk/*/*${{ env.BUILD_TYPE_LOWER }}*.apk
+          path: core/app/build/outputs/**/*.apk
+          if-no-files-found: error
 
       - name: Upload build log
         if: always()
@@ -122,3 +122,4 @@ jobs:
         with:
           name: build-log-${{ env.BUILD_TYPE_LOWER }}
           path: build.log
+          if-no-files-found: warn
