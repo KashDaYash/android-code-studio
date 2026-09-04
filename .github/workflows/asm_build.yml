@@ -76,6 +76,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      # AGP/desugar expects these intermediate dirs to exist before mergeExtDex*
+      - name: Create missing intermediate dirs
+        run: |
+          BASE="core/app/build/intermediates"
+          mkdir -p \
+            "$BASE/external_file_lib_dex_archives/debug/desugarDebugFileDependencies" \
+            "$BASE/external_file_lib_dex_archives/release/desugarReleaseFileDependencies" \
+            "$BASE/l8_art_profile/debug/l8DexDesugarLibDebug" \
+            "$BASE/l8_art_profile/release/l8DexDesugarLibRelease" \
+            "core/app/build/outputs/apk/debug" \
+            "core/app/build/outputs/apk/release"
+
       - name: Assemble APK
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
@@ -83,7 +95,6 @@ jobs:
         run: |
           set -o pipefail
           echo "Running: ./gradlew assemble${BUILD_TYPE}"
-          # Do NOT use -x signApk — that task does not exist and aborts the whole build.
           ./gradlew "assemble${BUILD_TYPE}" --stacktrace 2>&1 | tee build.log
 
       - name: Display Build Errors (tail)
