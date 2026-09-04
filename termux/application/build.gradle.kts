@@ -31,7 +31,8 @@ android {
     defaultConfig {
         buildConfigField("String", "TERMUX_PACKAGE_VARIANT", "\"" + packageVariant + "\"") // Used by TermuxApplication class
 
-        manifestPlaceholders["TERMUX_PACKAGE_NAME"] = BuildConfig.packageName
+        // Must match the installed applicationId (com.tom.rv2ide.kash), not the Java namespace
+        manifestPlaceholders["TERMUX_PACKAGE_NAME"] = BuildConfig.applicationId
         manifestPlaceholders["TERMUX_APP_NAME"] = "AndroidIDE"
     }
 
