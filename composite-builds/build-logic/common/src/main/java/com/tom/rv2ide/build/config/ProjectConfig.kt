@@ -23,14 +23,17 @@ import org.gradle.api.Project
 object ProjectConfig {
 
   /*
-  * https://github.com/AndroidCSOfficial
+  * Unofficial fork: https://github.com/KashDaYash/android-code-studio
+  * ACS build tools still resolved from upstream when no personal fork exists.
   */
   const val REPO_HOST = "github.com"
-  const val REPO_OWNER = "AndroidCSOfficial"
+  const val REPO_OWNER = "KashDaYash"
   const val REPO_NAME = "android-code-studio"
 
   const val ACS_BUILD_SYSTEM_REPONAME = "acs-build-system"
-  const val ACS_BUILD_SYSTEM_REPOURL = "https://$REPO_HOST/$REPO_OWNER/$ACS_BUILD_SYSTEM_REPONAME"
+  /** Upstream hosts the ACS build-system packages; override if you publish your own. */
+  const val ACS_BUILD_SYSTEM_OWNER = "AndroidCSOfficial"
+  const val ACS_BUILD_SYSTEM_REPOURL = "https://$REPO_HOST/$ACS_BUILD_SYSTEM_OWNER/$ACS_BUILD_SYSTEM_REPONAME"
   
   const val REPO_URL = "https://$REPO_HOST/$REPO_OWNER/$REPO_NAME"
   const val SCM_GIT =
