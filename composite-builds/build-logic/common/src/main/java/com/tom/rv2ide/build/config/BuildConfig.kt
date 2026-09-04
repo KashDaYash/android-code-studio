@@ -38,7 +38,7 @@ object BuildConfig {
   const val applicationId = "com.tom.rv2ide"
 
   /** The compile SDK version. */
-  const val compileSdk = 34
+  const val compileSdk = 36
   
   /** The build tools version. */
   const val buildToolsVersion = "35.0.0"
@@ -47,7 +47,7 @@ object BuildConfig {
   const val minSdk = 26
 
   /** The target SDK version. */
-  const val targetSdk = 28
+  const val targetSdk = 36
 
   const val ndkVersion = "26.1.10909125"
 
