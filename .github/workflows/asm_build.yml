@@ -115,16 +115,43 @@ jobs:
           APK_COUNT=$(find core/app/build/outputs -type f -name "*.apk" 2>/dev/null | wc -l | tr -d ' ')
           echo "APK_COUNT=$APK_COUNT"
           echo "apk_count=$APK_COUNT" >> $GITHUB_OUTPUT
+
+          # Stage per-ABI copies for separate artifacts
+          mkdir -p staged-apks/arm64-v8a staged-apks/armeabi-v7a staged-apks/other
+          while IFS= read -r apk; do
+            base=$(basename "$apk")
+            case "$base" in
+              *arm64-v8a*) cp -f "$apk" staged-apks/arm64-v8a/ ;;
+              *armeabi-v7a*) cp -f "$apk" staged-apks/armeabi-v7a/ ;;
+              *) cp -f "$apk" staged-apks/other/ ;;
+            esac
+          done < <(find core/app/build/outputs -type f -name "*.apk" 2>/dev/null)
+
+          ARM64_COUNT=$(find staged-apks/arm64-v8a -type f -name "*.apk" 2>/dev/null | wc -l | tr -d ' ')
+          ARM32_COUNT=$(find staged-apks/armeabi-v7a -type f -name "*.apk" 2>/dev/null | wc -l | tr -d ' ')
+          echo "arm64_count=$ARM64_COUNT" >> $GITHUB_OUTPUT
+          echo "arm32_count=$ARM32_COUNT" >> $GITHUB_OUTPUT
+          echo "arm64=$ARM64_COUNT arm32=$ARM32_COUNT total=$APK_COUNT"
+
           if [ "$APK_COUNT" = "0" ]; then
             echo "::error::No APK files were produced. Build did not package the app."
             exit 1
           fi
 
-      - name: Upload APKs
+      - name: Upload arm64-v8a APK
+        if: steps.find_apks.outputs.arm64_count != '0'
         uses: actions/upload-artifact@v4
         with:
-          name: apks-${{ env.BUILD_TYPE_LOWER }}
-          path: core/app/build/outputs/**/*.apk
+          name: apk-arm64-v8a-${{ env.BUILD_TYPE_LOWER }}
+          path: staged-apks/arm64-v8a/*.apk
+          if-no-files-found: error
+
+      - name: Upload armeabi-v7a APK
+        if: steps.find_apks.outputs.arm32_count != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-armeabi-v7a-${{ env.BUILD_TYPE_LOWER }}
+          path: staged-apks/armeabi-v7a/*.apk
           if-no-files-found: error
 
       - name: Upload build log
