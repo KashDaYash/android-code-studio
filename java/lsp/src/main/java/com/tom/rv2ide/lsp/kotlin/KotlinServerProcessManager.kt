@@ -433,16 +433,20 @@ class KotlinServerProcessManager(context: Context) {
   }
 
   private fun findJavaExecutable(): String {
+    // Prefer Environment paths so fork applicationId (e.g. com.tom.rv2ide.kash) works.
     val candidates =
-        listOf(
-            "/data/data/com.tom.rv2ide/files/usr/bin/java",
+        listOfNotNull(
+            Environment.JAVA?.absolutePath,
+            Environment.JAVA_HOME?.let { File(it, "bin/java").absolutePath },
+            File(Environment.PREFIX, "bin/java").absolutePath,
             System.getenv("JAVA_HOME")?.let { "$it/bin/java" },
             "java",
         )
 
-    return candidates.filterNotNull().firstOrNull { path ->
+    return candidates.firstOrNull { path ->
       try {
-        File(path).exists() || Runtime.getRuntime().exec(arrayOf(path, "-version")).waitFor() == 0
+        val f = File(path)
+        f.exists() && f.canExecute()
       } catch (e: Exception) {
         false
       }
