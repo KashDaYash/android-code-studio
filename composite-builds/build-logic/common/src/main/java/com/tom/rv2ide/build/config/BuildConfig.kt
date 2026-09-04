@@ -1,4 +1,6 @@
-package com.tom.rv2ide.build.config/*
+package com.tom.rv2ide.build.config
+
+/*
  *  This file is part of AndroidIDE.
  *
  *  AndroidIDE is free software: you can redistribute it and/or modify
@@ -25,16 +27,15 @@ import org.gradle.api.JavaVersion
 object BuildConfig {
 
   /**
-   * Java/Kotlin/R namespace base package. Must stay `com.tom.rv2ide` because
-   * source packages and generated R/databinding classes use this path.
-   *
-   * To install alongside upstream ACS, override only **applicationId** in
-   * `:core:app` (see core/app/build.gradle.kts) — do not change this value.
+   * Java/Kotlin namespace and install applicationId.
+   * Must remain `com.tom.rv2ide` so Termux bootstrap binaries (PREFIX under
+   * /data/data/com.tom.rv2ide/...) work. Side-by-side with official ACS needs
+   * rebuilt native packages — not supported in this fork yet.
    */
   const val packageName = "com.tom.rv2ide"
 
-  /** Install ID for this unofficial fork (side-by-side with upstream). */
-  const val applicationId = "com.tom.rv2ide.kash"
+  /** Same as packageName — required for Termux/bootstrap paths. */
+  const val applicationId = "com.tom.rv2ide"
 
   /** The compile SDK version. */
   const val compileSdk = 34
