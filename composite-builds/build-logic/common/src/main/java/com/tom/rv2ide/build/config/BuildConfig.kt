@@ -24,9 +24,17 @@ import org.gradle.api.JavaVersion
  */
 object BuildConfig {
 
-  /** Application ID — unique so this fork can install alongside upstream ACS. */
-  // Upstream uses: "com.tom.rv2ide"
-  const val packageName = "com.tom.rv2ide.kash"
+  /**
+   * Java/Kotlin/R namespace base package. Must stay `com.tom.rv2ide` because
+   * source packages and generated R/databinding classes use this path.
+   *
+   * To install alongside upstream ACS, override only **applicationId** in
+   * `:core:app` (see core/app/build.gradle.kts) — do not change this value.
+   */
+  const val packageName = "com.tom.rv2ide"
+
+  /** Install ID for this unofficial fork (side-by-side with upstream). */
+  const val applicationId = "com.tom.rv2ide.kash"
 
   /** The compile SDK version. */
   const val compileSdk = 34
