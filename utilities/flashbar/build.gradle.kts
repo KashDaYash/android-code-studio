@@ -27,6 +27,10 @@ plugins {
 
 android {
   namespace = "${BuildConfig.packageName}.flashbar"
+
+  buildFeatures {
+    viewBinding = true
+  }
 }
 
 dependencies {
