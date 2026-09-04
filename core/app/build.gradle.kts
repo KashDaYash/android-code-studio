@@ -73,21 +73,23 @@ android {
   }
   
   experimentalProperties["android.experimental.enableGlobalSynthetics"] = true
-  
+
+  val keyStorePath = "${rootProject.projectDir}/signing/signing-key.jks"
+  val keyStoreFile = file(keyStorePath)
+  val signingStorePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: ""
+  val signingKeyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: ""
+  val hasSigningCreds =
+      keyStoreFile.exists() && signingStorePassword.isNotBlank() && signingKeyPassword.isNotBlank()
 
   signingConfigs {
+    if (hasSigningCreds) {
       create("custom") {
-          val keyStorePath = "${rootProject.projectDir}/signing/signing-key.jks"
-          val keyStoreFile = file(keyStorePath)
-          
-          val signing_storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: ""
-          val signing_keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: ""
-          
-          storeFile = keyStoreFile
-          storePassword = signing_storePassword
-          keyAlias = "androidcs"
-          keyPassword = signing_keyPassword
+        storeFile = keyStoreFile
+        storePassword = signingStorePassword
+        keyAlias = "androidcs"
+        keyPassword = signingKeyPassword
       }
+    }
   }
 
   androidResources { generateLocaleConfig = true }
@@ -99,12 +101,17 @@ android {
 
   buildTypes {
     debug {
-      signingConfig = signingConfigs.getByName("custom")
+      // Use default Android debug keystore when custom secrets are missing (CI-friendly)
+      if (hasSigningCreds) {
+        signingConfig = signingConfigs.getByName("custom")
+      }
     }
 
     release {
       isShrinkResources = false
-      signingConfig = signingConfigs.getByName("custom")
+      if (hasSigningCreds) {
+        signingConfig = signingConfigs.getByName("custom")
+      }
     }
   }
   
@@ -139,7 +146,6 @@ android {
                   variantName.contains("arm64") -> "arm64-v8a"
                   variantName.contains("armeabi") || variantName.contains("arm7") -> "armeabi-v7a"
                   else -> {
-                    // This should not happen with our configuration
                     throw IllegalStateException(
                         "Could not determine ABI for variant: $variantName. Expected arm64-v8a or armeabi-v7a."
                     )
