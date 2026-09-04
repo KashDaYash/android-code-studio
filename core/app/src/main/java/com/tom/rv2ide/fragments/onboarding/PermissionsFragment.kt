@@ -31,7 +31,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.appintro.SlidePolicy
 import com.tom.rv2ide.R
 import com.tom.rv2ide.adapters.onboarding.OnboardingPermissionsAdapter
-import com.tom.rv2ide.buildinfo.BuildInfo
 import com.tom.rv2ide.models.OnboardingPermissionItem
 import com.tom.rv2ide.utils.flashError
 import com.tom.rv2ide.utils.isAtLeastR
@@ -168,8 +167,18 @@ class PermissionsFragment : OnboardingMultiActionFragment(), SlidePolicy {
 
   private fun requestSettingsTogglePermission(action: String) {
     val intent = Intent(action)
-    intent.setData(Uri.fromParts("package", BuildInfo.PACKAGE_NAME, null))
+    // Must use the installed applicationId (e.g. com.tom.rv2ide.kash), not BuildInfo.PACKAGE_NAME
+    // which is the source namespace (com.tom.rv2ide). Wrong package breaks grant detection after Settings.
+    intent.setData(Uri.fromParts("package", requireContext().packageName, null))
     settingsTogglePermissionRequestLauncher.launch(intent)
+  }
+
+  override fun onResume() {
+    super.onResume()
+    // Re-check after returning from system Settings (some OEMs skip activity result)
+    if (isAdded) {
+      onPermissionsUpdated()
+    }
   }
 
   override val isPolicyRespected: Boolean
