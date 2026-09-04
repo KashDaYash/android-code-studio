@@ -17,6 +17,8 @@
 
 package com.tom.rv2ide.lsp.kotlin
 
+import com.tom.rv2ide.utils.Environment
+
 import com.tom.rv2ide.lsp.kotlin.compiler.KotlinCompilerService
 import com.tom.rv2ide.projects.IProjectManager
 import com.tom.rv2ide.projects.ModuleProject
@@ -272,11 +274,10 @@ class KotlinClasspathProvider {
       // Gradle cache locations
       val gradleHomeDirs =
           listOf(
+              Environment.GRADLE_USER_HOME,
+              File(Environment.HOME, ".gradle"),
               File(System.getProperty("user.home", ""), ".gradle"),
-              File("/data/data/com.tom.rv2ide/files/home/.gradle"),
               File("/storage/emulated/0/.gradle"),
-              // Android app's own gradle cache
-              File(System.getProperty("user.home", ""), "../../.gradle"),
           )
 
       val kotlinVersion = getKotlinVersionFromProject()
