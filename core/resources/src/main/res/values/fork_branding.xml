@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Unofficial fork branding — unique names so strings.xml is never modified -->
+  <string name="app_name_kash" translatable="false">ACS Kash</string>
+  <string name="about_subtitle_kash" translatable="false">Unofficial ACS fork by KashDaYash</string>
+</resources>
