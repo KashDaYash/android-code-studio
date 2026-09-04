@@ -63,10 +63,12 @@ configurations.all {
 }
 
 android {
+  // Source / R namespace stays upstream package so library modules compile
   namespace = BuildConfig.packageName
 
   defaultConfig {
-    applicationId = BuildConfig.packageName
+    // Unique install ID so this fork coexists with official ACS
+    applicationId = BuildConfig.applicationId
     vectorDrawables.useSupportLibrary = true
   }
   
