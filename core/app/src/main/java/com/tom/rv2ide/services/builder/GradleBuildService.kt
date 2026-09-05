@@ -162,7 +162,7 @@ class GradleBuildService :
     val ticker = getString(R.string.title_gradle_service_notification_ticker)
     val title = getString(R.string.title_gradle_service_notification)
     val launch = packageManager.getLaunchIntentForPackage(BuildConfig.APPLICATION_ID)
-    val intent = PendingIntent.getActivity(this, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT)
+    val intent = PendingIntent.getActivity(this, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     val builder =
         Notification.Builder(this, BaseApplication.NOTIFICATION_GRADLE_BUILD_SERVICE)
             .setSmallIcon(R.drawable.ic_launcher_notification)
@@ -239,17 +239,15 @@ class GradleBuildService :
   private fun createLoggerInitScript(): File {
     val initScript = File(Environment.TMP_DIR, "ide-logger-init.gradle")
     val aar = getLoggerRuntimeAar()
-    val loggerDep =
-        if (isValidLoggerAar(aar)) {
-          "implementation files('${aar.absolutePath}')"
-        } else {
-          log.warn(
-              "Skipping logger-runtime.aar injection (missing or invalid at {}). " +
-                  "Project builds will work; in-app log sender may be unavailable.",
-              aar.absolutePath,
-          )
-          "// logger-runtime.aar skipped (invalid or not packaged in this ACS build)"
-        }
+    if (!isValidLoggerAar(aar)) {
+      log.warn(
+          "Skipping logger init script (invalid or missing AAR at {}). Builds proceed normally.",
+          aar.absolutePath,
+      )
+      // Empty init script — never break configure/sync
+      initScript.writeText("// ACS logger skipped: no valid logger-runtime.aar\n")
+      return initScript
+    }
 
     initScript.writeText(
         """
@@ -265,7 +263,7 @@ class GradleBuildService :
                       }
 
                       dependencies {
-                          $loggerDep
+                          implementation files('${aar.absolutePath}')
                           coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
                       }
                   }
