@@ -184,11 +184,14 @@ public class ToolsManager {
     final var nativeLibraryDir = context.getApplicationInfo().nativeLibraryDir;
     final var sourceAapt2 = new File(nativeLibraryDir, "libaapt2.so");
 
-    // Re-copy when missing, empty, or not executable — avoids stale/wrong host aapt2
+    // Re-copy when missing, empty, not executable, or wrong CPU (x86_64 aapt2 on ARM — #370)
+    final boolean wrongArch =
+        Environment.AAPT2.exists() && Environment.AAPT2.length() > 0 && !isAapt2CompatibleArch(Environment.AAPT2);
     final boolean needsCopy =
         !Environment.AAPT2.exists()
             || Environment.AAPT2.length() == 0
-            || !Environment.AAPT2.canExecute();
+            || !Environment.AAPT2.canExecute()
+            || wrongArch;
 
     if (needsCopy) {
       if (sourceAapt2.exists() && sourceAapt2.isFile() && sourceAapt2.length() > 0) {
@@ -199,9 +202,10 @@ public class ToolsManager {
           }
           FilesKt.copyTo(sourceAapt2, Environment.AAPT2, true, ConstantsKt.DEFAULT_BUFFER_SIZE);
           LOG.info(
-              "Installed AAPT2 from native lib dir {} ({} bytes)",
+              "Installed AAPT2 from native lib dir {} ({} bytes, arch ok={})",
               nativeLibraryDir,
-              Environment.AAPT2.length());
+              Environment.AAPT2.length(),
+              isAapt2CompatibleArch(Environment.AAPT2));
         } catch (Throwable t) {
           LOG.error("Failed to copy AAPT2 from {}", sourceAapt2, t);
         }
@@ -216,6 +220,42 @@ public class ToolsManager {
         && !Environment.AAPT2.canExecute()
         && !Environment.AAPT2.setExecutable(true)) {
       LOG.error("Cannot set executable permissions on AAPT2 binary");
+    }
+  }
+
+  /**
+   * Reads ELF e_machine from AAPT2 binary. Rejects x86_64 on ARM devices (upstream #370).
+   * EM_AARCH64=183, EM_ARM=40, EM_X86_64=62, EM_386=3.
+   */
+  private static boolean isAapt2CompatibleArch(File aapt2) {
+    try (var in = new java.io.FileInputStream(aapt2)) {
+      byte[] hdr = new byte[20];
+      if (in.read(hdr) < 20) return false;
+      // ELF magic
+      if (hdr[0] != 0x7f || hdr[1] != 'E' || hdr[2] != 'L' || hdr[3] != 'F') return false;
+      int eiData = hdr[5] & 0xff; // 1=little, 2=big
+      int emOff = 18;
+      int machine =
+          eiData == 2
+              ? ((hdr[emOff] & 0xff) << 8) | (hdr[emOff + 1] & 0xff)
+              : (hdr[emOff] & 0xff) | ((hdr[emOff + 1] & 0xff) << 8);
+      final var abis = android.os.Build.SUPPORTED_ABIS;
+      boolean isArm64 = false, isArm32 = false, isX86_64 = false, isX86 = false;
+      for (String abi : abis) {
+        if (abi.startsWith("arm64")) isArm64 = true;
+        else if (abi.startsWith("armeabi") || abi.equals("arm")) isArm32 = true;
+        else if (abi.equals("x86_64")) isX86_64 = true;
+        else if (abi.equals("x86")) isX86 = true;
+      }
+      if (machine == 183) return isArm64; // AArch64
+      if (machine == 40) return isArm32 || isArm64; // ARM
+      if (machine == 62) return isX86_64; // x86_64
+      if (machine == 3) return isX86; // i386
+      LOG.warn("Unknown AAPT2 ELF machine={} — allowing", machine);
+      return true;
+    } catch (Throwable t) {
+      LOG.warn("Could not read AAPT2 ELF header: {}", t.toString());
+      return true; // don't block if unreadable
     }
   }
 
