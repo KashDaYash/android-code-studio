@@ -36,6 +36,8 @@ object Check {
     return GeneralFileUtils.listDirsInDirectory(ndkDir)
         .map { it.name to versionStringToList(it.name) }
         .filter { it.second.isNotEmpty() }
+        // Prefer NDKs that actually run on this device (skip pure x86_64 host prebuilts on ARM)
+        .filter { isNdkCompatibleWithDevice(File(ndkDir, it.first)) }
         .sortedWith(
             Comparator { a, b ->
               compareVersionLists(b.second, a.second) // reversed for descending
@@ -148,9 +150,64 @@ object Check {
     val prebuiltDir = File(ndkPath, "toolchains/llvm/prebuilt")
     if (!prebuiltDir.exists()) return null
 
+    // Prefer host tags that match this device (fixes #362: x86_64 NDK on aarch64 phone)
+    val preferredHosts = preferredPrebuiltHostTags()
+    for (host in preferredHosts) {
+      val clang = File(prebuiltDir, "$host/bin/clang")
+      if (clang.isFile) return clang
+    }
+
+    // Fallback: any clang, but only if it is executable on this CPU (validated later)
     prebuiltDir.walkTopDown().forEach { file ->
       if (file.isFile && file.name == "clang") return file
     }
     return null
+  }
+
+  /**
+   * True if this NDK installation has a prebuilt toolchain usable on the current device.
+   * Official sdkmanager often installs linux-x86_64 only — unusable on ARM phones (#362).
+   */
+  private fun isNdkCompatibleWithDevice(ndkPath: File): Boolean {
+    val prebuiltDir = File(ndkPath, "toolchains/llvm/prebuilt")
+    if (!prebuiltDir.isDirectory) {
+      // Older layout — keep if ndk-build exists
+      return File(ndkPath, "ndk-build").exists()
+    }
+    val preferred = preferredPrebuiltHostTags().toSet()
+    val hosts = prebuiltDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: return false
+    if (hosts.any { it in preferred }) return true
+    // No matching host tag: still allow if clang runs (rare custom builds)
+    val clang = findClangExecutable(ndkPath) ?: return false
+    return try {
+      val p = ProcessBuilder(clang.absolutePath, "-v").redirectErrorStream(true).start()
+      if (!p.waitFor(5, TimeUnit.SECONDS)) {
+        p.destroy()
+        false
+      } else {
+        p.exitValue() == 0 || p.inputStream.bufferedReader().readText().contains("clang version")
+      }
+    } catch (_: Exception) {
+      false
+    }
+  }
+
+  /** Host tags for NDK llvm prebuilt on Android devices. */
+  private fun preferredPrebuiltHostTags(): List<String> {
+    val abis = android.os.Build.SUPPORTED_ABIS
+    val tags = mutableListOf<String>()
+    if (abis.any { it.startsWith("arm64") }) {
+      tags += listOf("linux-aarch64", "linux-arm64", "android-aarch64")
+    }
+    if (abis.any { it.startsWith("armeabi") || it == "arm" }) {
+      tags += listOf("linux-arm", "linux-armeabi", "android-arm")
+    }
+    if (abis.any { it == "x86_64" }) {
+      tags += listOf("linux-x86_64")
+    }
+    if (abis.any { it == "x86" }) {
+      tags += listOf("linux-x86")
+    }
+    return tags
   }
 }
