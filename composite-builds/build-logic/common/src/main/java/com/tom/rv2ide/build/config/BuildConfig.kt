@@ -37,7 +37,7 @@ object BuildConfig {
   /** Same as packageName — required for Termux/bootstrap paths. */
   const val applicationId = "com.tom.rv2ide"
 
-  /** The compile SDK version. */
+  /** The compile SDK version (can be higher than targetSdk). */
   const val compileSdk = 36
   
   /** The build tools version. */
@@ -46,8 +46,14 @@ object BuildConfig {
   /** The minimum SDK version. */
   const val minSdk = 26
 
-  /** The target SDK version. */
-  const val targetSdk = 36
+  /**
+   * MUST stay at 28 (same as upstream ACS + official Termux).
+   * Android 10+ W^X: targetSdk >= 29 blocks exec() of binaries under
+   * /data/data/<pkg>/files (PREFIX/bin/bash, idesetup scripts, etc.) via
+   * SELinux → "Permission denied". Upstream intentionally uses 28.
+   * User project templates can still use targetSdk 36 — that is separate.
+   */
+  const val targetSdk = 28
 
   const val ndkVersion = "26.1.10909125"
 
