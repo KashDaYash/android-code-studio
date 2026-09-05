@@ -88,7 +88,7 @@ tasks.register("copyIdesetupToJniLibs") {
             }
             val outDir = jni.dir(abi).asFile
             outDir.mkdirs()
-            val dest = java.io.File(outDir, "libidesetup.so")
+            val dest = outDir.resolve("libidesetup.so")
             src.copyTo(dest, overwrite = true)
             dest.setExecutable(true, false)
             logger.lifecycle("Packaged {} -> {}", src.name, dest)
