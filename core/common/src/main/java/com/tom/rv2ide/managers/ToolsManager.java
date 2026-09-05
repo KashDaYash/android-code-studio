@@ -180,19 +180,42 @@ public class ToolsManager {
   }
 
   private static void extractAapt2() {
-    if (!Environment.AAPT2.exists()) {
-      final var context = BaseApplication.getBaseInstance();
-      final var nativeLibraryDir = context.getApplicationInfo().nativeLibraryDir;
-      final var sourceAapt2 = new File(nativeLibraryDir, "libaapt2.so");
-      if (sourceAapt2.exists() && sourceAapt2.isFile()) {
-        FilesKt.copyTo(sourceAapt2, Environment.AAPT2, true, ConstantsKt.DEFAULT_BUFFER_SIZE);
+    final var context = BaseApplication.getBaseInstance();
+    final var nativeLibraryDir = context.getApplicationInfo().nativeLibraryDir;
+    final var sourceAapt2 = new File(nativeLibraryDir, "libaapt2.so");
+
+    // Re-copy when missing, empty, or not executable — avoids stale/wrong host aapt2
+    final boolean needsCopy =
+        !Environment.AAPT2.exists()
+            || Environment.AAPT2.length() == 0
+            || !Environment.AAPT2.canExecute();
+
+    if (needsCopy) {
+      if (sourceAapt2.exists() && sourceAapt2.isFile() && sourceAapt2.length() > 0) {
+        try {
+          if (Environment.AAPT2.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            Environment.AAPT2.delete();
+          }
+          FilesKt.copyTo(sourceAapt2, Environment.AAPT2, true, ConstantsKt.DEFAULT_BUFFER_SIZE);
+          LOG.info(
+              "Installed AAPT2 from native lib dir {} ({} bytes)",
+              nativeLibraryDir,
+              Environment.AAPT2.length());
+        } catch (Throwable t) {
+          LOG.error("Failed to copy AAPT2 from {}", sourceAapt2, t);
+        }
       } else {
-        LOG.error("{} file does not exist! This can be problematic.", sourceAapt2);
+        LOG.error(
+            "libaapt2.so missing in nativeLibraryDir={}. processDebugResources may fail.",
+            nativeLibraryDir);
       }
     }
 
-    if (!Environment.AAPT2.canExecute() && !Environment.AAPT2.setExecutable(true)) {
-      LOG.error("Cannot set executable permissions to AAPT2 binary");
+    if (Environment.AAPT2.exists()
+        && !Environment.AAPT2.canExecute()
+        && !Environment.AAPT2.setExecutable(true)) {
+      LOG.error("Cannot set executable permissions on AAPT2 binary");
     }
   }
 
