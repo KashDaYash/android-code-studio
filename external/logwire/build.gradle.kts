@@ -43,8 +43,10 @@ dependencies {
 tasks.register("fixAarName") {
     doLast {
         val aarDir = layout.buildDirectory.dir("outputs/aar").get().asFile
-        val outDir = File(projectDir, "../../core/app/src/main/assets").canonicalFile
-        outDir.mkdirs()
+        val assetsRoot = File(projectDir, "../../core/app/src/main/assets").canonicalFile
+        val assetsCommon = File(assetsRoot, "data/common")
+        assetsRoot.mkdirs()
+        assetsCommon.mkdirs()
         val files = aarDir.listFiles { f -> f.extension == "aar" } ?: return@doLast
         val finalName = "logger-runtime.aar"
         val aar = files.maxByOrNull { it.lastModified() } ?: return@doLast
@@ -53,20 +55,26 @@ tasks.register("fixAarName") {
             renamed.delete()
             aar.renameTo(renamed)
         }
-        renamed.copyTo(File(outDir, finalName), overwrite = true)
+        // Root assets (IDEApplication) + data/common (ToolsManager.getCommonAsset)
+        renamed.copyTo(File(assetsRoot, finalName), overwrite = true)
+        renamed.copyTo(File(assetsCommon, finalName), overwrite = true)
+        logger.lifecycle("Packaged {} ({} bytes) into app assets", finalName, renamed.length())
     }
 }
 
 plugins.withId("com.android.library") {
     afterEvaluate {
-        tasks.named("bundleReleaseAar").configure {
-            finalizedBy("fixAarName")
+        listOf("bundleReleaseAar", "bundleDebugAar").forEach { taskName ->
+            tasks.findByName(taskName)?.finalizedBy("fixAarName")
         }
     }
 }
 
 gradle.projectsEvaluated {
-    tasks.matching { it.path == ":core:app:preDebugBuild" }.configureEach {
+    // Ensure every ACS app package step has logger-runtime.aar in assets
+    tasks.matching {
+        it.path.startsWith(":core:app:pre") && it.path.endsWith("Build")
+    }.configureEach {
         dependsOn(":external:logwire:assembleRelease")
         dependsOn(":external:logwire:fixAarName")
     }
