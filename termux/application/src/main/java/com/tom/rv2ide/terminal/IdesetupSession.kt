@@ -34,10 +34,12 @@ import org.slf4j.LoggerFactory
 /**
  * [TermuxSession] used to run `idesetup` during automatic installation.
  *
- * OEM (OPPO/ColorOS) + Android 10+ W^X: files under app data that remain **writable**
- * cannot be exec'd → "Permission denied". Fix is chmod **0500** (strip write bit).
- * `idesetup` itself is loaded from jniLibs (`libidesetup.so`) which is always executable;
- * the bootstrap shell (`bash`) under PREFIX/bin must also be 0500 before idesetup execvp's it.
+ * Prefer PREFIX/bin/idesetup extracted from assets. That works when the IDE app
+ * uses targetSdk 28 (upstream ACS / Termux), which is required so SELinux allows
+ * exec of binaries under app-data. nativeLibraryDir/libidesetup.so is only a
+ * fallback (and can fail with "not found" when extractNativeLibs is false).
+ *
+ * Always chmod PREFIX bins to 0500 (no write bit) before exec.
  */
 class IdesetupSession
 private constructor(
@@ -114,31 +116,13 @@ private constructor(
 
     /**
      * Resolve executable idesetup path.
-     * 1. nativeLibraryDir/libidesetup.so (always executable)
-     * 2. assets → PREFIX/bin fallback
+     * 1. assets → PREFIX/bin/idesetup (preferred; works with targetSdk 28)
+     * 2. nativeLibraryDir/libidesetup.so (fallback only)
      * Always repairs PREFIX execute bits so idesetup's execvp("bash") can succeed.
      */
     @JvmStatic
     fun createScript(context: Context): File? {
       repairPrefixExecutePermissions(context)
-
-      val nativeLib = File(context.applicationInfo.nativeLibraryDir, NATIVE_LIB_NAME)
-      if (nativeLib.isFile && nativeLib.length() > 0) {
-        try {
-          nativeLib.setWritable(false, false)
-          nativeLib.setExecutable(true, false)
-          Os.chmod(nativeLib.absolutePath, MODE_EXEC_ONLY)
-        } catch (_: Throwable) {
-        }
-        log.info(
-            "Using native idesetup: {} ({} bytes, canExecute={})",
-            nativeLib.absolutePath,
-            nativeLib.length(),
-            nativeLib.canExecute(),
-        )
-        return nativeLib
-      }
-      log.warn("libidesetup.so not in nativeLibraryDir={}", context.applicationInfo.nativeLibraryDir)
 
       val binDir =
           try {
@@ -149,13 +133,44 @@ private constructor(
       if (!binDir.exists()) binDir.mkdirs()
 
       val script = File(binDir, "idesetup")
-      if (script.exists()) script.delete()
-
-      if (!writeIdesetupScript(context, script)) {
-        log.error("Failed to materialize idesetup from assets")
-        return null
+      try {
+        if (script.exists()) script.delete()
+      } catch (_: Throwable) {
       }
-      return finalizeExecutable(script)
+
+      if (writeIdesetupScript(context, script)) {
+        val ready = finalizeExecutable(script)
+        if (ready != null) {
+          log.info("Using PREFIX idesetup: {}", ready.absolutePath)
+          return ready
+        }
+      } else {
+        log.warn("Failed to materialize idesetup from assets into {}", script.absolutePath)
+      }
+
+      // Fallback: jniLibs copy (may be missing or not directly executable)
+      val nativeLib = File(context.applicationInfo.nativeLibraryDir, NATIVE_LIB_NAME)
+      if (nativeLib.isFile && nativeLib.length() > 0) {
+        try {
+          nativeLib.setWritable(false, false)
+          nativeLib.setExecutable(true, false)
+          Os.chmod(nativeLib.absolutePath, MODE_EXEC_ONLY)
+        } catch (_: Throwable) {
+        }
+        log.info(
+            "Using native idesetup fallback: {} ({} bytes, canExecute={})",
+            nativeLib.absolutePath,
+            nativeLib.length(),
+            nativeLib.canExecute(),
+        )
+        return nativeLib
+      }
+
+      log.error(
+          "idesetup unavailable: assets failed and libidesetup.so missing in {}",
+          context.applicationInfo.nativeLibraryDir,
+      )
+      return null
     }
 
     private fun finalizeExecutable(script: File): File? {
