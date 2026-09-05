@@ -66,3 +66,34 @@ tasks.register("versionName") {
         print(project.rootProject.version)
     }
 }
+
+// Copy architecture-specific idesetup into jniLibs as libidesetup.so so the binary
+// lives in Android's executable nativeLibraryDir (fixes OEM noexec Permission denied).
+tasks.register("copyIdesetupToJniLibs") {
+    val assetsCommon = layout.projectDirectory.dir("src/main/assets/data/common")
+    val jni = layout.projectDirectory.dir("src/main/jniLibs")
+    inputs.dir(assetsCommon)
+    outputs.dir(jni)
+    doLast {
+        val mapping =
+            mapOf(
+                "arm64" to "arm64-v8a",
+                "arm" to "armeabi-v7a",
+            )
+        mapping.forEach { (assetArch, abi) ->
+            val src = assetsCommon.dir(assetArch).file("idesetup").asFile
+            if (!src.exists()) {
+                logger.warn("idesetup asset missing for {}: {}", assetArch, src)
+                return@forEach
+            }
+            val outDir = jni.dir(abi).asFile
+            outDir.mkdirs()
+            val dest = java.io.File(outDir, "libidesetup.so")
+            src.copyTo(dest, overwrite = true)
+            dest.setExecutable(true, false)
+            logger.lifecycle("Packaged {} -> {}", src.name, dest)
+        }
+    }
+}
+
+tasks.named("preBuild").configure { dependsOn("copyIdesetupToJniLibs") }

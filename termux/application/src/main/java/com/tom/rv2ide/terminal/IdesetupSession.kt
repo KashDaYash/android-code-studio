@@ -35,6 +35,11 @@ import org.slf4j.LoggerFactory
  * [TermuxSession] implementation that is used to run the `idesetup` script during automatic
  * installation.
  *
+ * On many OEM ROMs (OPPO/ColorOS, etc.) the app-private data dir is mounted **noexec**, so
+ * extracting `idesetup` to `files/usr/bin` and calling exec() fails with Permission denied.
+ * The reliable path is the **native library directory** (`libidesetup.so` in jniLibs), which
+ * Android always maps executable — same pattern as `libaapt2.so`.
+ *
  * @author Akash Yadav
  */
 class IdesetupSession
@@ -50,20 +55,48 @@ private constructor(
 
     private val log = LoggerFactory.getLogger(IdesetupSession::class.java)
 
+    private const val NATIVE_LIB_NAME = "libidesetup.so"
+
     @JvmStatic
     fun wrap(session: TermuxSession?, script: File): IdesetupSession? {
       return session?.let { IdesetupSession(it, script) }
     }
 
     /**
-     * Extract the architecture-matching `idesetup` binary and make it executable.
+     * Resolve an executable `idesetup` path.
      *
-     * Writes under `$PREFIX/bin` (Termux-safe) with [Os.chmod] 0755 to avoid
-     * "Permission denied" on OEM devices when executing from plain files/tmp.
+     * Priority:
+     * 1. `nativeLibraryDir/libidesetup.so` (always executable on Android)
+     * 2. Extract from assets into PREFIX/bin + chmod (fallback)
      */
     @JvmStatic
     fun createScript(context: Context): File? {
-      // Prefer PREFIX/bin — executable location Termux expects
+      // --- Preferred: jniLibs native library (fixes OEM noexec / Permission denied) ---
+      val nativeLib = File(context.applicationInfo.nativeLibraryDir, NATIVE_LIB_NAME)
+      if (nativeLib.isFile && nativeLib.length() > 0) {
+        try {
+          nativeLib.setExecutable(true, false)
+          Os.chmod(nativeLib.absolutePath, 493) // 0755
+        } catch (_: Throwable) {
+          // native dir is typically executable even if chmod fails
+        }
+        if (nativeLib.canExecute() || nativeLib.isFile) {
+          log.info(
+              "Using native idesetup: {} ({} bytes, canExecute={})",
+              nativeLib.absolutePath,
+              nativeLib.length(),
+              nativeLib.canExecute(),
+          )
+          return nativeLib
+        }
+      } else {
+        log.warn(
+            "libidesetup.so not in nativeLibraryDir={}",
+            context.applicationInfo.nativeLibraryDir,
+        )
+      }
+
+      // --- Fallback: extract from assets to PREFIX/bin ---
       val binDir =
           try {
             Environment.BIN_DIR ?: File(context.filesDir, "usr/bin")
@@ -73,23 +106,12 @@ private constructor(
       if (!binDir.exists()) binDir.mkdirs()
 
       val script = File(binDir, "idesetup")
-      // Remove stale non-executable copy from older installs
-      if (script.exists()) {
-        //noinspection ResultOfMethodCallIgnored
-        script.delete()
-      }
+      if (script.exists()) script.delete()
 
       if (!writeIdesetupScript(context, script)) {
-        // Fallback: files/tmp (matches some older error paths)
-        val tmpDir = File(context.filesDir, "tmp").also { it.mkdirs() }
-        val fallback = File(tmpDir, "idesetup")
-        if (fallback.exists()) fallback.delete()
-        if (!writeIdesetupScript(context, fallback)) {
-          return null
-        }
-        return finalizeExecutable(fallback)
+        log.error("Failed to materialize idesetup from assets")
+        return null
       }
-
       return finalizeExecutable(script)
     }
 
@@ -99,24 +121,20 @@ private constructor(
         return null
       }
 
-      // 1) Java API
       script.setReadable(true, false)
       script.setWritable(true, true)
       script.setExecutable(true, false)
-
-      // 2) Termux FileUtils
       FileUtils.setFilePermissions("idesetupScript", script.absolutePath, "rwx")
-
-      // 3) Native chmod 0755 — most reliable on OEM (OPPO/ColorOS, etc.)
       try {
-        Os.chmod(script.absolutePath, 493) // 0755
+        Os.chmod(script.absolutePath, 493)
       } catch (t: Throwable) {
         log.warn("Os.chmod failed for {}: {}", script.absolutePath, t.message)
       }
 
       if (!script.canExecute()) {
         log.error(
-            "idesetup is not executable at {} (size={}). exec will fail with Permission denied.",
+            "idesetup not executable at {} (size={}). " +
+                "OEM may block exec from app data; rebuild with jniLibs/libidesetup.so.",
             script.absolutePath,
             script.length(),
         )
@@ -166,7 +184,7 @@ private constructor(
         val magic = ByteArray(4)
         script.inputStream().use { it.read(magic) }
         if (magic[0] != 0x7f.toByte() || magic[1] != 'E'.code.toByte()) {
-          log.error("idesetup at {} is not an ELF binary (corrupt asset?)", script.absolutePath)
+          log.error("idesetup at {} is not an ELF binary", script.absolutePath)
           return false
         }
         true
@@ -190,11 +208,5 @@ private constructor(
 
   override fun finish() {
     super.finish()
-    if (script.absolutePath.contains("/tmp/") || script.absolutePath.contains("/temp/")) {
-      val error = FileUtils.deleteFile("idesetupScript", script.absolutePath, true)
-      if (error != null) {
-        log.error(error.errorLogString)
-      }
-    }
   }
 }
