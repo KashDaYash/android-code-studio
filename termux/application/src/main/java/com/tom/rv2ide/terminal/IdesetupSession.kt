@@ -32,21 +32,18 @@ import java.io.FileOutputStream
 import org.slf4j.LoggerFactory
 
 /**
- * [TermuxSession] implementation that is used to run the `idesetup` script during automatic
- * installation.
+ * [TermuxSession] used to run `idesetup` during automatic installation.
  *
- * On many OEM ROMs (OPPO/ColorOS, etc.) the app-private data dir is mounted **noexec**, so
- * extracting `idesetup` to `files/usr/bin` and calling exec() fails with Permission denied.
- * The reliable path is the **native library directory** (`libidesetup.so` in jniLibs), which
- * Android always maps executable — same pattern as `libaapt2.so`.
- *
- * @author Akash Yadav
+ * OEM (OPPO/ColorOS) + Android 10+ W^X: files under app data that remain **writable**
+ * cannot be exec'd → "Permission denied". Fix is chmod **0500** (strip write bit).
+ * `idesetup` itself is loaded from jniLibs (`libidesetup.so`) which is always executable;
+ * the bootstrap shell (`bash`) under PREFIX/bin must also be 0500 before idesetup execvp's it.
  */
 class IdesetupSession
 private constructor(
     terminalSession: TerminalSession,
     executionCommand: ExecutionCommand,
-    termuxSessionClient: TermuxSessionClient?,
+    termuxSessionClient: TermuxSession.TermuxSessionClient?,
     setStdoutOnExit: Boolean,
     private val script: File,
 ) : TermuxSession(terminalSession, executionCommand, termuxSessionClient, setStdoutOnExit) {
@@ -56,6 +53,8 @@ private constructor(
     private val log = LoggerFactory.getLogger(IdesetupSession::class.java)
 
     private const val NATIVE_LIB_NAME = "libidesetup.so"
+    /** r-x------ — no write bit → satisfies W^X on OEM ROMs */
+    private const val MODE_EXEC_ONLY = 320 // 0500 octal
 
     @JvmStatic
     fun wrap(session: TermuxSession?, script: File): IdesetupSession? {
@@ -63,40 +62,84 @@ private constructor(
     }
 
     /**
-     * Resolve an executable `idesetup` path.
-     *
-     * Priority:
-     * 1. `nativeLibraryDir/libidesetup.so` (always executable on Android)
-     * 2. Extract from assets into PREFIX/bin + chmod (fallback)
+     * Ensure PREFIX/bin (and common exec dirs) are executable without write bit.
+     * Safe to call repeatedly; ignores missing dirs.
+     */
+    @JvmStatic
+    fun repairPrefixExecutePermissions(context: Context) {
+      val roots =
+          listOfNotNull(
+              try {
+                Environment.BIN_DIR
+              } catch (_: Throwable) {
+                null
+              },
+              File(context.filesDir, "usr/bin"),
+              File(context.filesDir, "usr/libexec"),
+              File(context.filesDir, "usr/lib/apt/methods"),
+          )
+      for (dir in roots) {
+        if (!dir.isDirectory) continue
+        dir.listFiles()?.forEach { f ->
+          if (!f.isFile) return@forEach
+          try {
+            f.setWritable(false, false)
+            f.setExecutable(true, true)
+            f.setReadable(true, true)
+            Os.chmod(f.absolutePath, MODE_EXEC_ONLY)
+          } catch (t: Throwable) {
+            log.debug("chmod {} failed: {}", f.name, t.message)
+          }
+        }
+      }
+      for (name in listOf("bash", "sh", "dash", "busybox")) {
+        val f = File(context.filesDir, "usr/bin/$name")
+        if (f.isFile) {
+          try {
+            f.setWritable(false, false)
+            f.setExecutable(true, true)
+            Os.chmod(f.absolutePath, MODE_EXEC_ONLY)
+            log.info(
+                "PREFIX {} mode fixed canExecute={} path={}",
+                name,
+                f.canExecute(),
+                f.absolutePath,
+            )
+          } catch (t: Throwable) {
+            log.warn("Failed to fix {}: {}", name, t.message)
+          }
+        }
+      }
+    }
+
+    /**
+     * Resolve executable idesetup path.
+     * 1. nativeLibraryDir/libidesetup.so (always executable)
+     * 2. assets → PREFIX/bin fallback
+     * Always repairs PREFIX execute bits so idesetup's execvp("bash") can succeed.
      */
     @JvmStatic
     fun createScript(context: Context): File? {
-      // --- Preferred: jniLibs native library (fixes OEM noexec / Permission denied) ---
+      repairPrefixExecutePermissions(context)
+
       val nativeLib = File(context.applicationInfo.nativeLibraryDir, NATIVE_LIB_NAME)
       if (nativeLib.isFile && nativeLib.length() > 0) {
         try {
+          nativeLib.setWritable(false, false)
           nativeLib.setExecutable(true, false)
-          Os.chmod(nativeLib.absolutePath, 493) // 0755
+          Os.chmod(nativeLib.absolutePath, MODE_EXEC_ONLY)
         } catch (_: Throwable) {
-          // native dir is typically executable even if chmod fails
         }
-        if (nativeLib.canExecute() || nativeLib.isFile) {
-          log.info(
-              "Using native idesetup: {} ({} bytes, canExecute={})",
-              nativeLib.absolutePath,
-              nativeLib.length(),
-              nativeLib.canExecute(),
-          )
-          return nativeLib
-        }
-      } else {
-        log.warn(
-            "libidesetup.so not in nativeLibraryDir={}",
-            context.applicationInfo.nativeLibraryDir,
+        log.info(
+            "Using native idesetup: {} ({} bytes, canExecute={})",
+            nativeLib.absolutePath,
+            nativeLib.length(),
+            nativeLib.canExecute(),
         )
+        return nativeLib
       }
+      log.warn("libidesetup.so not in nativeLibraryDir={}", context.applicationInfo.nativeLibraryDir)
 
-      // --- Fallback: extract from assets to PREFIX/bin ---
       val binDir =
           try {
             Environment.BIN_DIR ?: File(context.filesDir, "usr/bin")
@@ -120,27 +163,21 @@ private constructor(
         log.error("idesetup missing or empty at {}", script.absolutePath)
         return null
       }
-
-      script.setReadable(true, false)
-      script.setWritable(true, true)
-      script.setExecutable(true, false)
-      FileUtils.setFilePermissions("idesetupScript", script.absolutePath, "rwx")
       try {
-        Os.chmod(script.absolutePath, 493)
+        script.setWritable(false, false)
+        script.setReadable(true, false)
+        script.setExecutable(true, false)
+        FileUtils.setFilePermissions("idesetupScript", script.absolutePath, "r-x")
+        Os.chmod(script.absolutePath, MODE_EXEC_ONLY)
       } catch (t: Throwable) {
-        log.warn("Os.chmod failed for {}: {}", script.absolutePath, t.message)
+        log.warn("finalize chmod failed: {}", t.message)
       }
-
-      if (!script.canExecute()) {
-        log.error(
-            "idesetup not executable at {} (size={}). " +
-                "OEM may block exec from app data; rebuild with jniLibs/libidesetup.so.",
-            script.absolutePath,
-            script.length(),
-        )
-      } else {
-        log.info("idesetup ready: path={} size={}", script.absolutePath, script.length())
-      }
+      log.info(
+          "idesetup ready: path={} size={} canExecute={}",
+          script.absolutePath,
+          script.length(),
+          script.canExecute(),
+      )
       return script
     }
 
@@ -154,14 +191,12 @@ private constructor(
               CpuArch.X86_64 -> "x86_64"
               CpuArch.X86 -> "x86"
             }
-
         val assetCandidates =
             listOf(
                 ToolsManager.getCommonAsset("$folderName/idesetup"),
                 "$folderName/idesetup",
                 "data/common/$folderName/idesetup",
             )
-
         var opened = false
         for (asset in assetCandidates) {
           try {
@@ -175,12 +210,10 @@ private constructor(
             log.debug("Asset '{}' not available: {}", asset, e.message)
           }
         }
-
         if (!opened) {
           log.error("No idesetup asset found for arch {} ({})", cpuArch, folderName)
           return false
         }
-
         val magic = ByteArray(4)
         script.inputStream().use { it.read(magic) }
         if (magic[0] != 0x7f.toByte() || magic[1] != 'E'.code.toByte()) {
