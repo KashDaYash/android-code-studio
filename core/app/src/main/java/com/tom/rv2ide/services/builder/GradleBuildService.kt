@@ -435,8 +435,12 @@ class GradleBuildService :
       }
     }
 
-    // Override AAPT2 binary
-    extraArgs.add("-Pandroid.aapt2FromMavenOverride=" + Environment.AAPT2.absolutePath)
+    // Override AAPT2 binary (device-native). Skip if missing so Gradle error is clearer.
+    if (Environment.AAPT2.exists() && Environment.AAPT2.canExecute()) {
+      extraArgs.add("-Pandroid.aapt2FromMavenOverride=" + Environment.AAPT2.absolutePath)
+    } else {
+      log.warn("AAPT2 not ready at {} — builds may fail processDebugResources", Environment.AAPT2)
+    }
     extraArgs.add("-P${PROPERTY_LOGSENDER_ENABLED}=${DevOpsPreferences.logsenderEnabled}")
 
     if (BuildPreferences.isStacktraceEnabled) {
