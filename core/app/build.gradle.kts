@@ -286,6 +286,12 @@ dependencies {
   // implementation(libs.composite.javapoet)
   implementation(files(rootProject.file("composite-builds/build-deps/libs/javapoet.jar")))
 
+  // CRITICAL: openjdk/javac tool jars must be on the app classpath so D8 packs
+  // openjdk.tools.javac.file.CacheFSInfo into the final APK. Library-only
+  // api(files()) is not always enough for composite + AGP packaging.
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/jdk-compiler.jar")))
+  implementation(files(rootProject.file("composite-builds/build-deps/libs/java-compiler.jar")))
+
   // Local projects here
   implementation(projects.core.projectdata)
   implementation(projects.ideconfigurations)
