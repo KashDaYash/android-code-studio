@@ -27,6 +27,11 @@ plugins {
 
 android {
     namespace = "${BuildConfig.packageName}.javac.services"
+
+    defaultConfig {
+        // Ensure openjdk.tools.javac classes are kept when consumers minify
+        consumerProguardFiles("consumer-rules.pro")
+    }
     
     buildTypes {
         release {
