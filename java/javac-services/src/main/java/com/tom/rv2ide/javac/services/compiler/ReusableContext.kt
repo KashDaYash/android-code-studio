@@ -28,7 +28,6 @@ import com.tom.rv2ide.javac.services.NBParserFactory
 import com.tom.rv2ide.javac.services.NBResolve
 import com.tom.rv2ide.javac.services.NBTreeMaker
 import com.tom.rv2ide.javac.services.fs.JarPackageProviderImpl
-import com.tom.rv2ide.utils.VMUtils
 import com.tom.rv2ide.zipfs2.JarPackageProvider
 import java.net.URI
 import jdkx.tools.DiagnosticListener
@@ -46,7 +45,6 @@ import openjdk.tools.javac.comp.Check
 import openjdk.tools.javac.comp.CompileStates
 import openjdk.tools.javac.comp.Enter
 import openjdk.tools.javac.comp.Modules
-import openjdk.tools.javac.file.CacheFSInfo
 import openjdk.tools.javac.file.FSInfo
 import openjdk.tools.javac.main.Arguments
 import openjdk.tools.javac.main.JavaCompiler
@@ -87,13 +85,11 @@ class ReusableContext(cancelService: CancelService) : Context(), TaskListener {
   }
 
   /**
-   * Prefer [CacheFSInfo] when the openjdk class is on the runtime classpath.
-   * Fall back to plain [FSInfo] so project init never crashes with ClassNotFoundException.
+   * Prefer CacheFSInfo when the openjdk class is on the runtime classpath.
+   * Fall back to a plain FSInfo subclass so project init never crashes with
+   * ClassNotFoundException / NoClassDefFoundError for CacheFSInfo.
    */
   private fun createFsInfo(): FSInfo {
-    if (VMUtils.isJvm()) {
-      return CacheFSInfo()
-    }
     return try {
       Class.forName("openjdk.tools.javac.file.CacheFSInfo")
         .getDeclaredConstructor()
@@ -103,7 +99,8 @@ class ReusableContext(cancelService: CancelService) : Context(), TaskListener {
         "CacheFSInfo unavailable at runtime; using plain FSInfo. ({})",
         t.toString()
       )
-      FSInfo()
+      // FSInfo() ctor is protected — subclass can call it
+      object : FSInfo() {}
     }
   }
 
