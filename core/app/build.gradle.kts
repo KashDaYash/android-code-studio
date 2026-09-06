@@ -42,8 +42,7 @@ buildscript {
   }
 }
 
-// Desugar tasks are intentionally disabled; ArtProfile compile depends on
-// l8DexDesugarLib*/baseline-prof.txt which is never produced — skip both.
+// CI: desugar disabled → ArtProfile would FileNotFound on baseline-prof.txt
 tasks.configureEach {
   val n = name.lowercase()
   if (n.contains("desugar") || n.contains("artprofile") || n.contains("compileartprofile")) {
@@ -66,14 +65,12 @@ configurations.all {
 }
 
 android {
-  // Source / R namespace stays upstream package so library modules compile
   namespace = BuildConfig.packageName
 
   defaultConfig {
-    // Unique install ID so this fork coexists with official ACS
+    // Fork-only: unique ID so this build coexists with official ACS
     applicationId = BuildConfig.applicationId
     vectorDrawables.useSupportLibrary = true
-    // Help ensure large openjdk/javac tool jars are fully dexed
     multiDexEnabled = true
   }
   
@@ -106,7 +103,6 @@ android {
 
   buildTypes {
     debug {
-      // Use default Android debug keystore when custom secrets are missing (CI-friendly)
       if (hasSigningCreds) {
         signingConfig = signingConfigs.getByName("custom")
       }
@@ -118,7 +114,6 @@ android {
       if (hasSigningCreds) {
         signingConfig = signingConfigs.getByName("custom")
       }
-      // Keep rules still apply when minify is later enabled
       proguardFiles(
           getDefaultProguardFile("proguard-android-optimize.txt"),
           rootProject.file("proguard-rules.pro")
@@ -136,7 +131,6 @@ android {
       pickFirsts += "kotlin/**.kotlin_builtins"
       pickFirsts += "THIRD-PARTY"
       pickFirsts += "LICENSE"
-      // Avoid META-INF clashes from embedded javac / openjdk jars
       excludes += "META-INF/DEPENDENCIES"
       excludes += "META-INF/LICENSE.txt"
       excludes += "META-INF/NOTICE.txt"
@@ -285,12 +279,6 @@ dependencies {
   implementation(libs.composite.desugaringCore)
   // implementation(libs.composite.javapoet)
   implementation(files(rootProject.file("composite-builds/build-deps/libs/javapoet.jar")))
-
-  // CRITICAL: openjdk/javac tool jars must be on the app classpath so D8 packs
-  // openjdk.tools.javac.file.CacheFSInfo into the final APK. Library-only
-  // api(files()) is not always enough for composite + AGP packaging.
-  implementation(files(rootProject.file("composite-builds/build-deps/libs/jdk-compiler.jar")))
-  implementation(files(rootProject.file("composite-builds/build-deps/libs/java-compiler.jar")))
 
   // Local projects here
   implementation(projects.core.projectdata)
