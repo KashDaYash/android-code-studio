@@ -75,18 +75,18 @@ jobs:
           key: ${{ runner.os }}-gradle-v3-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-      
+
       # AGP/desugar expects these intermediate dirs to exist before mergeExtDex*
-       - name: Create missing intermediate dirs
-         run: |
-           BASE="core/app/build/intermediates"
-           mkdir -p \
-             "$BASE/external_file_lib_dex_archives/debug/desugarDebugFileDependencies" \
-             "$BASE/external_file_lib_dex_archives/release/desugarReleaseFileDependencies" \
-             "$BASE/l8_art_profile/debug/l8DexDesugarLibDebug" \
-             "$BASE/l8_art_profile/release/l8DexDesugarLibRelease" \
-             "core/app/build/outputs/apk/debug" \
-             "core/app/build/outputs/apk/release"
+      - name: Create missing intermediate dirs
+        run: |
+          BASE="core/app/build/intermediates"
+          mkdir -p \
+            "$BASE/external_file_lib_dex_archives/debug/desugarDebugFileDependencies" \
+            "$BASE/external_file_lib_dex_archives/release/desugarReleaseFileDependencies" \
+            "$BASE/l8_art_profile/debug/l8DexDesugarLibDebug" \
+            "$BASE/l8_art_profile/release/l8DexDesugarLibRelease" \
+            "core/app/build/outputs/apk/debug" \
+            "core/app/build/outputs/apk/release"
 
       - name: Assemble APK
         env:
