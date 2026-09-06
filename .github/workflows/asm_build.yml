@@ -76,7 +76,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # AGP/desugar expects these intermediate dirs to exist before mergeExtDex*
+      # AGP/desugar expects these intermediate dirs + baseline profile stubs
       - name: Create missing intermediate dirs
         run: |
           BASE="core/app/build/intermediates"
@@ -87,6 +87,9 @@ jobs:
             "$BASE/l8_art_profile/release/l8DexDesugarLibRelease" \
             "core/app/build/outputs/apk/debug" \
             "core/app/build/outputs/apk/release"
+          # Empty stubs so compile*ArtProfile does not FileNotFound when desugar is disabled
+          : > "$BASE/l8_art_profile/debug/l8DexDesugarLibDebug/baseline-prof.txt"
+          : > "$BASE/l8_art_profile/release/l8DexDesugarLibRelease/baseline-prof.txt"
 
       - name: Assemble APK
         env:
