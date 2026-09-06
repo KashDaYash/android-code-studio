@@ -42,10 +42,13 @@ buildscript {
   }
 }
 
+// Desugar tasks are intentionally disabled; ArtProfile compile depends on
+// l8DexDesugarLib*/baseline-prof.txt which is never produced — skip both.
 tasks.configureEach {
-    if (name.contains("desugar", ignoreCase = true)) {
-        enabled = false
-    }
+  val n = name.lowercase()
+  if (n.contains("desugar") || n.contains("artprofile") || n.contains("compileartprofile")) {
+    enabled = false
+  }
 }
 
 configurations.all {
@@ -125,7 +128,7 @@ android {
   
   lint {
     abortOnError = false
-    disable.addAll(arrayOf("VectorPath", "NestedWeights", "ContentDescription", "SmallSp"))
+    disable.addAll(arrayOf("VectorPath", "NestedWeights", "ContentDescription", "SmallSp", "ExtraTranslation"))
   }
 
   packaging {
