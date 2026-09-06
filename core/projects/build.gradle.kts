@@ -46,6 +46,10 @@ dependencies {
   api(projects.event.eventbusEvents)
   api(projects.tooling.api)
 
+  // Ensure openjdk CacheFSInfo reaches the final APK (project indexing path)
+  api(files(rootProject.file("composite-builds/build-deps/libs/jdk-compiler.jar")))
+  api(files(rootProject.file("composite-builds/build-deps/libs/java-compiler.jar")))
+
   implementation(projects.core.common)
   implementation(projects.java.javacServices)
   implementation(projects.logging.logger)
