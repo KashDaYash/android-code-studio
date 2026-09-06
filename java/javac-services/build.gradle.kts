@@ -41,7 +41,15 @@ android {
 }
 
 dependencies {
+    // Composite module (metadata / wiring)
     api(libs.composite.javac)
+
+    // CRITICAL: ship the actual openjdk/javac tool jars into the Android APK.
+    // Composite java-library + files() alone can omit classes from the final dex,
+    // which causes ClassNotFoundException: openjdk.tools.javac.file.CacheFSInfo
+    // during WorkspaceModelBuilder / project initialization.
+    api(files(rootProject.file("composite-builds/build-deps/libs/jdk-compiler.jar")))
+    api(files(rootProject.file("composite-builds/build-deps/libs/java-compiler.jar")))
 
     implementation(libs.common.kotlin)
     implementation(libs.common.utilcode)
