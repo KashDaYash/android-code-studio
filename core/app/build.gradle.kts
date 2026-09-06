@@ -86,7 +86,7 @@ android {
       create("custom") {
         storeFile = keyStoreFile
         storePassword = signingStorePassword
-        keyAlias = "androidcs"
+        keyAlias = "android_code_studio"
         keyPassword = signingKeyPassword
       }
     }
