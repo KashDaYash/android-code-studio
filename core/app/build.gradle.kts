@@ -70,6 +70,8 @@ android {
     // Unique install ID so this fork coexists with official ACS
     applicationId = BuildConfig.applicationId
     vectorDrawables.useSupportLibrary = true
+    // Help ensure large openjdk/javac tool jars are fully dexed
+    multiDexEnabled = true
   }
   
   experimentalProperties["android.experimental.enableGlobalSynthetics"] = true
@@ -109,9 +111,15 @@ android {
 
     release {
       isShrinkResources = false
+      isMinifyEnabled = false
       if (hasSigningCreds) {
         signingConfig = signingConfigs.getByName("custom")
       }
+      // Keep rules still apply when minify is later enabled
+      proguardFiles(
+          getDefaultProguardFile("proguard-android-optimize.txt"),
+          rootProject.file("proguard-rules.pro")
+      )
     }
   }
   
@@ -125,6 +133,14 @@ android {
       pickFirsts += "kotlin/**.kotlin_builtins"
       pickFirsts += "THIRD-PARTY"
       pickFirsts += "LICENSE"
+      // Avoid META-INF clashes from embedded javac / openjdk jars
+      excludes += "META-INF/DEPENDENCIES"
+      excludes += "META-INF/LICENSE.txt"
+      excludes += "META-INF/NOTICE.txt"
+      excludes += "META-INF/*.SF"
+      excludes += "META-INF/*.DSA"
+      excludes += "META-INF/*.RSA"
+      pickFirsts += "META-INF/services/**"
     }
   }
 
