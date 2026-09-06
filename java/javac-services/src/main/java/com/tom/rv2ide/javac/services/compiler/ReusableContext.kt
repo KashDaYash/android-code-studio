@@ -27,7 +27,9 @@ import com.tom.rv2ide.javac.services.NBMemberEnter
 import com.tom.rv2ide.javac.services.NBParserFactory
 import com.tom.rv2ide.javac.services.NBResolve
 import com.tom.rv2ide.javac.services.NBTreeMaker
+import com.tom.rv2ide.javac.services.fs.CacheFSInfoSingleton
 import com.tom.rv2ide.javac.services.fs.JarPackageProviderImpl
+import com.tom.rv2ide.utils.VMUtils
 import com.tom.rv2ide.zipfs2.JarPackageProvider
 import java.net.URI
 import jdkx.tools.DiagnosticListener
@@ -45,6 +47,7 @@ import openjdk.tools.javac.comp.Check
 import openjdk.tools.javac.comp.CompileStates
 import openjdk.tools.javac.comp.Enter
 import openjdk.tools.javac.comp.Modules
+import openjdk.tools.javac.file.CacheFSInfo
 import openjdk.tools.javac.file.FSInfo
 import openjdk.tools.javac.main.Arguments
 import openjdk.tools.javac.main.JavaCompiler
@@ -54,7 +57,6 @@ import openjdk.tools.javac.util.Context
 import openjdk.tools.javac.util.DefinedBy
 import openjdk.tools.javac.util.DefinedBy.Api.COMPILER_TREE
 import openjdk.tools.javac.util.Log
-import org.slf4j.LoggerFactory
 
 /**
  * Reusable [Context] for [ReusableCompiler].
@@ -67,7 +69,7 @@ class ReusableContext(cancelService: CancelService) : Context(), TaskListener {
 
   init {
     put(Log.logKey, ReusableLog.factory)
-    put(FSInfo::class.java, createFsInfo())
+    put(FSInfo::class.java, if (VMUtils.isJvm()) CacheFSInfo() else CacheFSInfoSingleton)
     put(JavaCompiler.compilerKey, ReusableJavaCompiler.factory)
     put(JavacFlowListener.flowListenerKey, JavacFlowListener { this.hasFlowCompleted(it) })
     put(JarPackageProvider::class.java, JarPackageProviderImpl)
@@ -82,26 +84,6 @@ class ReusableContext(cancelService: CancelService) : Context(), TaskListener {
     NBClassFinder.preRegister(this)
     NBClassReader.preRegister(this)
     CancelService.preRegister(this, cancelService)
-  }
-
-  /**
-   * Prefer CacheFSInfo when the openjdk class is on the runtime classpath.
-   * Fall back to a plain FSInfo subclass so project init never crashes with
-   * ClassNotFoundException / NoClassDefFoundError for CacheFSInfo.
-   */
-  private fun createFsInfo(): FSInfo {
-    return try {
-      Class.forName("openjdk.tools.javac.file.CacheFSInfo")
-        .getDeclaredConstructor()
-        .newInstance() as FSInfo
-    } catch (t: Throwable) {
-      log.warn(
-        "CacheFSInfo unavailable at runtime; using plain FSInfo. ({})",
-        t.toString()
-      )
-      // FSInfo() ctor is protected — subclass can call it
-      object : FSInfo() {}
-    }
   }
 
   @DefinedBy(COMPILER_TREE)
@@ -164,9 +146,5 @@ class ReusableContext(cancelService: CancelService) : Context(), TaskListener {
         false
       }
     }
-  }
-
-  companion object {
-    private val log = LoggerFactory.getLogger(ReusableContext::class.java)
   }
 }
